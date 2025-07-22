@@ -1,0 +1,35 @@
+---
+title: "Data_Explore_V3"
+format: html
+---
+
+```{r}
+# ───────────────────────────────────────────────────────────────────────────
+# 2. Load libraries
+# ───────────────────────────────────────────────────────────────────────────
+library(haven)     # read_sav()
+library(dplyr)     # data wrangling
+library(labelled)  # as_factor()
+library(skimr)     # skim()
+library(tidyr)     # pivot_longer()
+library(naniar)    # vis_miss()
+library(stringr)   # for str_replace_all()
+
+# 🔒 This file is not included in public repo
+# sav_path <- "...sav"
+sav_path <- "REDACTED.sav"
+
+stop("❌ Data not included in repo. Please provide your own SPSS file to continue.")
+```
+
+
+
+
+
+
+
+
+
+
+
+
