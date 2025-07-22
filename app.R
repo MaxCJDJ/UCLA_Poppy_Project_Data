@@ -43,3 +43,45 @@ library(shiny)           # for building interactive web applications
 library(shinydashboard)  # for creating dashboard layouts with Shiny
 library(tidyr)           # for data tidying (pivoting, unnesting, handling missing values)
 
+## 1. Load & Preprocess -------------------------------------------------------
+df_tcwp <- readRDS("need the actual data here.rds") %>%
+  
+  # Rename columns to standardize nested naming format for Q23 responses
+  # Original format: q23_<subq>_<member>_<field>
+  # Desired format:  q23_<subq>_<field>_<member> (for easier pivoting/analysis)
+  rename_with(
+    ~ sub("^q23_(\\d+)_(\\d+)_(.+)$", "q23_\\1_\\3_\\2", .x),
+    matches("^q23_\\d+_\\d+_.+")
+  ) %>%
+  
+  # Add cleaner and more consistent variable names for core demographic fields
+  mutate(
+    household_id     = q3_household_ID,         # Unique household ID
+    participant_id   = q4_participant_ID,       # Unique participant ID
+    main_respondent  = MAIN_RESPONDENT,         # Flag for main household respondent
+    region_name      = as_factor(q7_marz),      # Region (province) of interview
+    age              = q9_b_age,                # Respondent’s age
+    gender           = as_factor(q10_gender),   # Gender of respondent
+    nationality      = as_factor(q11_nationality), # Nationality of respondent
+    
+    # Recode displacement region before Sept. 2023 into labeled factors
+    region_before    = factor(
+      q27_region_Artsakh_44_day,
+      levels = 1:5,
+      labels = c("Artsakh", "Martuni", "Askeran", "Hadrut", "Shushi")
+    ),
+    
+    # Recode displacement region after Sept. 2023 into labeled factors
+    region_after     = factor(
+      q28_region_Artsakh_September,
+      levels = 1:5,
+      labels = c("Artsakh", "Martuni", "Askeran", "Hadrut", "Shushi")
+    )
+  ) %>%
+  
+
+
+
+
+
+
