@@ -60,6 +60,23 @@ message("\n-- Column names ------------------------------------------------")
 print(colnames(df_tcwp))
 ```
 
+# 5. Convert all labelled SPSS vars to factors ----------------------------
+```{r}
+# 5. Convert all SPSS-labelled variables into R factors
+df_tcwp <- df_tcwp %>%
+  mutate(
+    # For every column that still uses haven’s labelled class,
+    # turn it into an R factor using the embedded value labels
+    across(where(is.labelled), as_factor)
+  )
+
+# Confirm conversion by glimpsing the data again
+message("\n-- After converting labelled → factor --------------------------")
+glimpse(df_tcwp)
+```
+
+
+
 
 
 
