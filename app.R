@@ -105,6 +105,26 @@ df_tcwp <- readRDS("need the actual data here.rds") %>%
     q58_amount = readr::parse_number(q58_amount)      # Extract numeric value from rent (text input)
   )
 
+# 1a. Friendly labels for Panel 2 ----------------------------------------------
+mod2_friendly <- c(
+  # q13_: reasons for mistrust (check-all)
+  q13_reasons_mistrust            = "Mistrust Authorities",
+  q13_reasons_interference        = "Fear of Interference",
+  q13_reasons_eligible            = "Ineligible for Services",
+  q13_reasons_loosing_opportunity = "Loss of Opportunities",
+  q13_reasons_familiar            = "Prefer Familiar Areas",
+  q13_reasons_time                = "Lack of Time",
+  q13_reasons_having_plans        = "Already Have Plans",
+  q13_reasons_other               = "Other Reason",
+  # employment status
+  q16_employed_before_displacement = "Employed Before Displacement",
+  q17_employed_after_displacement  = "Employed After Displacement",
+  q20_currently_employed           = "Currently Employed"
+)
+
+# swap names/values so the dropdown shows nice labels but returns raw names
+mod2_choices <- setNames(names(mod2_friendly), mod2_friendly)
+
 
 
 
