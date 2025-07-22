@@ -1555,4 +1555,49 @@ server <- function(input, output, session) {
   })
   
   
+  ## Panel 8: Life Events & Trauma Scales ------------------------------------
+  
+  # A) Custom DT for whichever variable the user picks in var8
+  output$tbl8 <- renderDT({
+    req(input$var8)
+    var   <- input$var8
+    label <- mod8_friendly[[var]]
+    
+    df_tcwp %>%
+      # pull out the column, turn to character, label NA as "Missing"
+      mutate(
+        v = as.character(.data[[var]]),
+        v = tidyr::replace_na(v, "Missing")
+      ) %>%
+      count(v, name = "Count") %>%
+      rename(!!label := v) %>%
+      arrange(desc(Count)) %>%
+      datatable(
+        colnames = c(label, "Count"),
+        options  = list(pageLength = 10, autoWidth = TRUE)
+      )
+  })
+  
+  # B) Custom ggplot bar chart for the same variable
+  output$plt8 <- renderPlot({
+    req(input$var8)
+    var   <- input$var8
+    label <- mod8_friendly[[var]]
+    
+    df_tcwp %>%
+      mutate(
+        category = as.character(.data[[var]]),
+        category = tidyr::replace_na(category, "Missing")
+      ) %>%
+      count(category, name = "n") %>%
+      ggplot(aes(x = category, y = n)) +
+      geom_col() +
+      labs(
+        x     = label,
+        y     = "Count",
+        title = paste("Distribution of", label)
+      ) +
+      theme_minimal(base_size = 14) +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  })
   
