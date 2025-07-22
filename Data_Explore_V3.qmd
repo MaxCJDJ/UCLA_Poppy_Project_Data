@@ -36,6 +36,14 @@ if (!file.exists(sav_path)) {
 }
 ```
 
+# 3. Read SPSS data into a tibble ------------------------------------------
+```{r}
+# 3. Read the SPSS (.sav) file into R as a tibble (data frame)
+df_tcwp <- read_sav(sav_path)
+```
+
+
+
 
 
 
