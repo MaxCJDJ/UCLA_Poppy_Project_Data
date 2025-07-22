@@ -1162,9 +1162,114 @@ server <- function(input, output, session) {
       layout(xaxis=list(title="Count"), yaxis=list(title="Barrier"))
   })
   
+  ## Panel 3: Household Composition ------------------------------------------
+  
+  # A) Size distribution
+  output$hh_size_plot <- renderPlotly({
+    req(input$hh_size_var)
+    var <- input$hh_size_var
+    df_tcwp %>%
+      filter(!is.na(!!sym(var))) %>%
+      count(size = !!sym(var)) %>%
+      plot_ly(x = ~size, y = ~n, type = "bar") %>%
+      layout(
+        xaxis = list(title = "Household size"),
+        yaxis = list(title = "Count")
+      )
+  })
+  
+  # B) Member‐level pivot + plot
+  members_long <- reactive({
+    df_tcwp %>%
+      # grab _all_ q23_*_*_* columns
+      select(matches("^q23_")) %>%
+      mutate(across(everything(), as.character)) %>%
+      # pivot into long, capturing:
+      #   * question (e.g. "living_with_respond")
+      #   * member_index (the final “_1", "_2", …)
+      pivot_longer(
+        cols        = matches("^q23_\\d+_.+_\\d+$"),
+        names_to    = c("q_num", "question", "member_index"),
+        names_pattern = "q23_(\\d+)_(.+)_(\\d+)$",
+        values_to   = "value"
+      ) %>%
+      filter(!is.na(value) & value != "")
+  })
+  
+  # friendly labels for the sub‐questions
+  member_labels <- c(
+    year_birth              = "Year of birth",
+    gender                  = "Gender",
+    relation_respondent     = "Relation to respondent",
+    current_health_status   = "Current status (alive/dead)",
+    living_with_respond     = "Lives with respondent?",
+    employment              = "Employment status"
+  )
+  
+  output$member_title <- renderText({
+    member_labels[[ input$member_var ]]
+  })
+  
+  output$member_plot <- renderPlotly({
+    req(input$member_var)
+    members_long() %>%
+      filter(question == input$member_var) %>%
+      count(answer = value) %>%
+      plot_ly(x = ~answer, y = ~n, type = "bar") %>%
+      layout(
+        xaxis = list(title = member_labels[[input$member_var]]),
+        yaxis = list(title = "Count")
+      )
+  })
 
-
-
+  
+  ## Panel 4: Population Movement — SERVER ------------------------------------
+  
+  ## A) Region before the war
+  output$mod4_before_plot <- renderPlotly({
+    df_tcwp %>%
+      filter(!is.na(q27_region_Artsakh_44_day)) %>%
+      mutate(region_before = as_factor(q27_region_Artsakh_44_day)) %>%
+      count(region_before) %>%
+      plot_ly(x = ~region_before, y = ~n, type = "bar") %>%
+      layout(
+        xaxis = list(title = "Region before war", tickangle = -45),
+        yaxis = list(title = "# households"),
+        margin = list(b = 100)
+      )
+  })
+  
+  ## B) Region moved from (Sep 2023)
+  output$mod4_after_plot <- renderPlotly({
+    df_tcwp %>%
+      filter(!is.na(q28_region_Artsakh_September)) %>%
+      mutate(region_after = as_factor(q28_region_Artsakh_September)) %>%
+      count(region_after) %>%
+      plot_ly(x = ~region_after, y = ~n, type = "bar") %>%
+      layout(
+        xaxis = list(title = "Region moved from (Sep 2023)", tickangle = -45),
+        yaxis = list(title = "# households"),
+        margin = list(b = 100)
+      )
+  })
+  
+  
+  # C) # moves histogram + stats
+  output$mod4_nmoves_hist <- renderPlotly({
+    df_tcwp %>%
+      filter(!is.na(q29_change_living_frquesncy)) %>%
+      plot_ly(x = ~q29_change_living_frquesncy, type = "histogram") %>%
+      layout(xaxis = list(title = "# moves"), yaxis = list(title = "Count"))
+  })
+  output$mod4_nmoves_stats <- renderText({
+    stats <- df_tcwp %>%
+      summarise(
+        mean   = mean(q29_change_living_frquesncy, na.rm = TRUE),
+        median = median(q29_change_living_frquesncy, na.rm = TRUE)
+      )
+    sprintf("Mean = %.2f, median = %d", stats$mean, stats$median)
+  })
+  
 
 
 
