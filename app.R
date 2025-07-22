@@ -495,4 +495,27 @@ mod9_matrix_labels <- list(
 )
 
 
+# 4. UI ----------------------------------------------------------------------
+ui <- dashboardPage(
+  dashboardHeader(title = tagList(icon("chart-bar"), "TCWP Survey Explorer")),
+  
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("1. Admin & Demographic",       tabName = "admin", icon = icon("users")),
+      menuItem("2. Pre-Displacement & Emp.",    tabName = "mod2",  icon = icon("truck")),
+      menuItem("3. Household Composition",      tabName = "mod3",  icon = icon("home")),
+      menuItem("4. Population Movement",        tabName = "mod4",  icon = icon("map-marked-alt")),
+      menuItem("5. Access & Utilization of Svcs", tabName = "mod5", icon = icon("hands-helping")),
+      menuItem("6. Intentions & Perspectives",  tabName = "mod6",  icon = icon("lightbulb")),
+      menuItem("7. Socio-Economic Status",      tabName = "mod7",  icon = icon("chart-line")),
+      menuItem("8. Life Events & Trauma",       tabName = "mod8",  icon = icon("heartbeat")),
+      menuItem("9. Health Behaviors & QoL",     tabName = "mod9",  icon = icon("stethoscope"))
+    )
+  ),
+  
+  dashboardBody(
+    # ensure consistent valueBox height
+    tags$head(tags$style(HTML(".small-box {height: 120px !important;}"))),
+    
+    tabItems(
 
