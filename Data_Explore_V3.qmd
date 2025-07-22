@@ -82,8 +82,24 @@ message("\n-- skimr summary -----------------------------------------------")
 skim(df_tcwp)
 ```
 
+# 7. Missingness overview --------------------------------------------------
+```{r}
+# 7. Compute missingness percentage for each variable
+message("\n-- % Missing by variable ---------------------------------------")
+missing_pct <- df_tcwp %>%
+  # For each column, compute (NA count / total rows) * 100
+  summarise(across(everything(), ~ mean(is.na(.)) * 100)) %>%
+  # Pivot into long form for easy sorting and printing
+  pivot_longer(
+    everything(), 
+    names_to  = "variable", 
+    values_to = "pct_missing"
+  ) %>%
+  # Show variables with the most missing data at the top
+  arrange(desc(pct_missing))
 
-
+print(missing_pct)
+```
 
 
 
