@@ -42,7 +42,23 @@ if (!file.exists(sav_path)) {
 df_tcwp <- read_sav(sav_path)
 ```
 
+# 4. Basic structure & names -----------------------------------------------
+```{r}
+# 4. Inspect the data’s overall structure and column names
 
+# Print the number of rows and columns
+message("\n-- Dimensions --------------------------------------------------")
+message(" Rows: ", nrow(df_tcwp), 
+        " | Columns: ", ncol(df_tcwp), "\n")
+
+# Show a compact “glimpse” of the data (types and a preview of values)
+message("-- Glimpse -----------------------------------------------------")
+glimpse(df_tcwp)
+
+# List all column names
+message("\n-- Column names ------------------------------------------------")
+print(colnames(df_tcwp))
+```
 
 
 
