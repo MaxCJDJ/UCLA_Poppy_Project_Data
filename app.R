@@ -1395,3 +1395,120 @@ server <- function(input, output, session) {
       )
   })
 
+  
+  ## Panel 6: Intentions & Perspectives — server adjustments ------------------
+  
+  # Q45: Why did you choose this community?
+  output$mod6_choose_comm <- renderPlotly({
+    df_tcwp %>%
+      select(any_of(names(mod6_choose_labels))) %>%
+      pivot_longer(everything(), names_to="code", values_to="sel") %>%
+      filter(sel == "Yes") %>%
+      count(code) %>%
+      mutate(label = mod6_choose_labels[code]) %>%
+      plot_ly(x=~label, y=~n, type="bar") %>%
+      layout(
+        xaxis = list(title="", tickangle = -45),
+        yaxis = list(title="Count")
+      )
+  })
+  
+  # Q46: are you planning to leave?
+  output$mod6_plan_leave <- renderPlotly({
+    df_tcwp %>%
+      filter(!is.na(q46_plan_leave_accom)) %>%
+      count(q46_plan_leave_accom, name = "n") %>%
+      plot_ly(x = ~q46_plan_leave_accom, y = ~n, type = "bar") %>%
+      layout(xaxis = list(title = ""), yaxis = list(title = "Count"))
+  })
+  
+  # Q47: Reasons for planning to leave
+  output$mod6_reasons_leave <- renderPlotly({
+    df_tcwp %>%
+      select(any_of(names(mod6_reasons_leave_labels))) %>%
+      pivot_longer(everything(), names_to="code", values_to="sel") %>%
+      filter(sel == "Yes") %>%
+      count(code) %>%
+      mutate(label = mod6_reasons_leave_labels[code]) %>%
+      plot_ly(x=~label, y=~n, type="bar") %>%
+      layout(xaxis = list(title="", tickangle = -45),
+             yaxis = list(title="Count"))
+  })
+  
+  # Q48: stay vs. move
+  output$mod6_stay_vs_move <- renderPlotly({
+    df_tcwp %>%
+      filter(!is.na(q48_plan_to_stay)) %>%
+      count(q48_plan_to_stay, name = "n") %>%
+      plot_ly(x = ~q48_plan_to_stay, y = ~n, type = "bar") %>%
+      layout(xaxis = list(title = ""), yaxis = list(title = "Count"))
+  })
+  
+  # Q48.1: if staying, which Marz/City?
+  output$mod6_stay_location <- renderPlotly({
+    df_tcwp %>%
+      filter(q48_plan_to_stay == "Stay in Armenia") %>%
+      count(q48_1_which_marz_city, name = "n") %>%
+      plot_ly(x = ~q48_1_which_marz_city, y = ~n, type = "bar") %>%
+      layout(xaxis = list(title = "Marz/City"), yaxis = list(title = "Count"))
+  })
+  
+  # Q49: Reasons for moving elsewhere
+  output$mod6_reasons_move <- renderPlotly({
+    df_tcwp %>%
+      select(any_of(names(mod6_reasons_move_labels))) %>%
+      pivot_longer(everything(), names_to="code", values_to="sel") %>%
+      filter(sel == "Yes") %>%
+      count(code) %>%
+      mutate(label = mod6_reasons_move_labels[code]) %>%
+      plot_ly(x=~label, y=~n, type="bar") %>%
+      layout(xaxis = list(title="", tickangle = -45),
+             yaxis = list(title="Count"))
+  })
+  
+  # Q50: which country?
+  output$mod6_dest_country <- renderPlotly({
+    df_tcwp %>%
+      filter(!is.na(q50_country_go)) %>%
+      count(q50_country_go, name = "n") %>%
+      plot_ly(x = ~q50_country_go, y = ~n, type = "bar") %>%
+      layout(xaxis = list(title = "Country"), yaxis = list(title = "Count"))
+  })
+  
+  # Q51: Why that country?
+  output$mod6_reasons_country <- renderPlotly({
+    df_tcwp %>%
+      select(any_of(names(mod6_reasons_country_labels))) %>%
+      pivot_longer(everything(), names_to="code", values_to="sel") %>%
+      filter(sel == "Yes") %>%
+      count(code) %>%
+      mutate(label = mod6_reasons_country_labels[code]) %>%
+      plot_ly(x=~label, y=~n, type="bar") %>%
+      layout(xaxis = list(title="", tickangle = -45),
+             yaxis = list(title="Count"))
+  })
+  
+  # Q52: missing docs?
+  output$mod6_missing_docs <- renderPlotly({
+    df_tcwp %>%
+      filter(!is.na(q52_missing_doc)) %>%
+      count(q52_missing_doc, name = "n") %>%
+      plot_ly(x = ~q52_missing_doc, y = ~n, type = "bar") %>%
+      layout(xaxis = list(title = "Missing documentation?"),
+             yaxis = list(title = "Count"))
+  })
+  
+  # Q53: What type of documents are you missing?
+  output$mod6_types_docs <- renderPlotly({
+    df_tcwp %>%
+      select(any_of(names(mod6_types_docs_labels))) %>%
+      pivot_longer(everything(), names_to="code", values_to="sel") %>%
+      filter(sel == "Yes") %>%
+      count(code) %>%
+      mutate(label = mod6_types_docs_labels[code]) %>%
+      plot_ly(x=~label, y=~n, type="bar") %>%
+      layout(xaxis = list(title="", tickangle = -45),
+             yaxis = list(title="Count"))
+  })
+  
+  
