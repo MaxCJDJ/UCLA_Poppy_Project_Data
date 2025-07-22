@@ -168,8 +168,18 @@ if (length(id_cands) > 0) {
 }
 ```
 
-
-
+# 11. Save file -----------------------------------------------
+```{r}
+# ───────────────────────────────────────────────────────────────────────────
+# 11. (Optional) Save a lightweight RDS for faster future loading
+# ───────────────────────────────────────────────────────────────────────────
+# Using .rds preserves R-specific objects (factors, dates, labels) 
+# and is much faster to read back in than re-parsing the original SPSS file.
+saveRDS(
+  df_tcwp,
+  file = "....rds"
+)
+```
 
 
 
