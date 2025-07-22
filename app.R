@@ -937,7 +937,93 @@ ui <- dashboardPage(
 )
 
 
-
+# 5. Server ------------------------------------------------------------------
+server <- function(input, output, session) {
+  
+  ## Panel 1: Administrative & Demographic -----------------------------------
+  
+  # Q3: # of households
+  output$vb_households <- renderValueBox({
+    valueBox(
+      scales::comma(n_distinct(df_tcwp$q3_household_ID)),
+      "Households (Q3)", icon = icon("home"), color = "teal"
+    )
+  })
+  
+  # Q4: # of participants
+  output$vb_participants <- renderValueBox({
+    valueBox(
+      scales::comma(n_distinct(df_tcwp$q4_participant_ID)),
+      "Participants (Q4)", icon = icon("users"), color = "green"
+    )
+  })
+  
+  # Q6: % main respondent = Yes
+  output$vb_main_resp <- renderValueBox({
+    pct <- mean(df_tcwp$MAIN_RESPONDENT == "Yes", na.rm = TRUE)
+    valueBox(
+      scales::percent(pct, accuracy = 0.1),
+      "Main Respondent (Q6 = Yes)", icon = icon("check-circle"),
+      color = "purple"
+    )
+  })
+  
+  # Q9.b: Age distribution
+  output$age_dist <- renderPlotly({
+    plot_ly(df_tcwp, x = ~q9_b_age, type = "histogram", nbinsx = 15) %>%
+      layout(
+        title = "Q9.b Age (years)",
+        xaxis = list(title = "Age"),
+        yaxis = list(title = "Count")
+      )
+  })
+  
+  # Q10: Gender breakdown
+  output$gender_bar <- renderPlotly({
+    df_tcwp %>%
+      count(q10_gender) %>%
+      filter(!is.na(q10_gender)) %>%
+      plot_ly(x = ~q10_gender, y = ~n, type = "bar") %>%
+      layout(
+        title = "Q10 Gender",
+        xaxis = list(title = ""),
+        yaxis = list(title = "Count")
+      )
+  })
+  
+  # Q11: Nationality breakdown
+  output$nat_bar <- renderPlotly({
+    df_tcwp %>%
+      count(q11_nationality) %>%
+      filter(!is.na(q11_nationality)) %>%
+      arrange(n) %>%
+      mutate(nationality = factor(q11_nationality, levels = q11_nationality)) %>%
+      plot_ly(x = ~n, y = ~nationality, type = "bar", orientation = "h") %>%
+      layout(
+        title = "Q11 Nationality",
+        xaxis = list(title = "Count"),
+        yaxis = list(title = "")
+      )
+  })
+  
+  # Q7: Marz map
+  output$map1 <- renderLeaflet({
+    rc <- df_tcwp %>%
+      filter(!is.na(q7_marz)) %>%
+      count(q7_marz, name = "n")
+    mdf <- regions_sf %>%
+      left_join(rc, by = c("NAME_1" = "q7_marz")) %>%
+      mutate(n = replace_na(n, 0))
+    pal <- colorBin("YlOrRd", domain = mdf$n, bins = 5)
+    leaflet(mdf) %>%
+      addProviderTiles(providers$CartoDB.Positron) %>%
+      addPolygons(
+        fillColor = ~pal(n), fillOpacity = 0.7, color = "#444", weight = 1,
+        label = ~paste0(NAME_1, ": ", n),
+        highlightOptions = highlightOptions(weight = 2, color = "#000")
+      ) %>%
+      addLegend(pal = pal, values = ~n, title = "Respondents")
+  })
 
 
 
