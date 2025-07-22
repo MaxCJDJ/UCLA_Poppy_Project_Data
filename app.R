@@ -1695,3 +1695,6 @@ server <- function(input, output, session) {
     }
   })
 }
+
+# 6. Launch ------------------------------------------------------------------
+shinyApp(ui, server)
