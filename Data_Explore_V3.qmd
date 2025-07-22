@@ -118,4 +118,33 @@ if (ncol(num_vars) > 0) {
 }
 ```
 
+# 9. Factor variables: top levels ------------------------------------------
+```{r}
+# 9. Examine factor variables: show top 5 levels by count
+
+# Get a vector of all factor-column names
+fac_vars <- df_tcwp %>% select(where(is.factor)) %>% names()
+
+if (length(fac_vars) > 0) {
+  message("\n-- Top 5 levels for each factor var --------------------------")
+  for (v in fac_vars) {
+    # Print the variable name
+    cat("\nVariable:", v, "\n")
+    # Count each level, sort descending, and show the top 5
+    print(
+      df_tcwp %>% 
+        count(.data[[v]], sort = TRUE, name = "n") %>%
+        slice_head(n = 5)
+    )
+  }
+} else {
+  message("\n-- No factor columns found -----------------------------------")
+}
+```
+
+
+
+
+
+
 
