@@ -22,7 +22,19 @@ sav_path <- "REDACTED.sav"
 stop("❌ Data not included in repo. Please provide your own SPSS file to continue.")
 ```
 
-
+# 2. Define and check file path --------------------------------------------
+```{r}
+# 2. Check that the SPSS file exists before trying to read it
+if (!file.exists(sav_path)) {
+  # If the file isn’t found, stop execution and print an error
+  stop("❌ File not found:\n  ", sav_path)
+} else {
+  # If the file exists, print a confirmation with its size in MB
+  message("✅ Found file (", 
+          round(file.info(sav_path)$size / 1024^2, 1),
+          " MB)\n")
+}
+```
 
 
 
