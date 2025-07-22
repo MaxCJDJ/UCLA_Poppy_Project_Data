@@ -101,13 +101,21 @@ missing_pct <- df_tcwp %>%
 print(missing_pct)
 ```
 
+# 8. Numeric variables summary --------------------------------------------
+```{r}
+# 8. Summarize numeric-only columns
 
+# Select only numeric columns
+num_vars <- df_tcwp %>% select(where(is.numeric))
 
-
-
-
-
-
-
+if (ncol(num_vars) > 0) {
+  # If there are any numeric columns, print their min/median/max, etc.
+  message("\n-- Summary of numeric variables ------------------------------")
+  print(summary(num_vars))
+} else {
+  # Otherwise, note that no numeric columns exist
+  message("\n-- No purely numeric columns found ----------------------------")
+}
+```
 
 
