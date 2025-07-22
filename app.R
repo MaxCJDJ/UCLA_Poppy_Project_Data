@@ -374,5 +374,60 @@ mod7_friendly <- c(
   q64_future_hardship  = "Perceived Future Hardships"
 )
 
- 
+## ────────────────────────────────────────────────────────────────────────────
+## Panel 7: Socio‐Economic Status — raw→friendly mapping
+## ────────────────────────────────────────────────────────────────────────────
+mod7_friendly <- c(
+  q54_rating           = "Standard of Living",
+  q55_housing_type     = "Housing Situation",
+  q56_rooms            = "Number of Rooms",
+  q57_satisfaction     = "Housing Satisfaction",
+  q58_pay_flag         = "Pay Rent/Mortgage (Yes/No)",
+  q58_amount           = "Rent/Mortgage Amount (AMD)",
+  q59_heating          = "Primary Heating Source",
+  q60_water            = "Drinking Water Source",
+  q61_expenditure      = "Monthly Expenditure Range",
+  q62_needs_met        = "Income Meets Basic Needs",
+  q63_food_worry       = "Worry About Food Insecurity",
+  q64_future_hardship  = "Perceived Future Hardships"
+)
+
+## swap names/values so the dropdown shows the friendly labels
+mod7_choices <- setNames(names(mod7_friendly), mod7_friendly)
+
+## ────────────────────────────────────────────────────────────────────────────
+## Panel 8: Life Events & Trauma — raw→friendly mapping
+## ────────────────────────────────────────────────────────────────────────────
+mod8_friendly <- c(
+  # serious life events (Q68)
+  q68_serious_loss                 = "Serious Loss (e.g. loved one)",
+  q68_serous_injury_to_you         = "Serious Injury to You",
+  q68_serous_injury_to_family      = "Serious Injury to Family",
+  q68_separation                   = "Separation from Family/Community",
+  q68_jail                         = "Incarceration (Self or Household)",
+  q68_other                        = "Other Serious Event",
+  # most frequent traumatic exposures (Q69)
+  q69_natural_disaster_happened_to_me = "Natural Disaster – Experienced",
+  q69_fire_happened_to_me             = "Fire – Experienced",
+  q69_displacement_happened_to_me     = "Forced Displacement – Experienced",
+  q69_assault_happen_to_me            = "Assault – Experienced",
+  q69_violent_death_happened_to_me    = "Violent Death of Loved One",
+  # overall worst trauma (Q70)
+  q70_most_traumatic_event            = "Most Traumatic Event (self-reported)",
+  # PTSD symptoms (Q71)
+  q71_1_memories                      = "Intrusive Memories",
+  q71_2_disturbing_dreams             = "Disturbing Dreams",
+  q71_3_stressful_experience          = "Flashbacks / Reliving",
+  q71_20_troube_falling_asleep        = "Trouble Falling Asleep",
+  # PTSD thresholds
+  at_least_20                         = "PTSD Symptoms ≥ 20",
+  at_least_19                         = "PTSD Symptoms ≥ 19",
+  at_least_18                         = "PTSD Symptoms ≥ 18",
+  # functional impairment (Q72)
+  q72_functioning_suffer              = "Impaired Functioning Due to Trauma"
+)
+
+## swap names/values so the dropdown shows the friendly labels
+mod8_choices <- setNames(names(mod8_friendly), mod8_friendly)
+
 
