@@ -430,4 +430,69 @@ mod8_friendly <- c(
 ## swap names/values so the dropdown shows the friendly labels
 mod8_choices <- setNames(names(mod8_friendly), mod8_friendly)
 
+## ────────────────────────────────────────────────────────────────────────────
+## Panel 9: Health Behaviors, QoL & Info Sources — raw→friendly mapping
+## ────────────────────────────────────────────────────────────────────────────
+
+# Friendly labels for Panel 9 --------------------------------------------
+mod9_friendly <- c(
+  # Health behaviors
+  q84              = "Smoking status",
+  q85              = "Alcohol frequency",
+  q86              = "Days drinking per week",
+  q87              = "Drinks per occasion",
+  q88              = "Ever binge-drank",
+  q89              = "Ever used narcotic drugs",
+  q90              = "Types of drugs used",
+  q91              = "Household drug use",
+  q92              = "Self-rated health (last 30d)",
+  # QoL sub-questions (check-all matrix)
+  q93              = "Problems with daily activities",
+  q94              = "Pain or anxious/depressed",
+  # Health information sources (frequency matrix)
+  q82              = "Info sources frequency",
+  q83              = "Preferred info methods"
+)
+
+mod9_choices <- setNames(names(mod9_friendly), mod9_friendly)
+
+
+mod9_matrix_labels <- list(
+  q82 = c(
+    q82_TV                   = "TV",
+    q82_friends              = "Friends/Family",
+    q82_governmental         = "Governmental Sources",
+    q82_health_organizations = "Health Orgs",
+    q82_internet             = "Internet",
+    q82_other_provider       = "Other Providers",
+    q82_pharmacist           = "Pharmacist",
+    q82_physician            = "Physician"
+  ),
+  q83 = c(
+    q83_health_information   = "Health Information Sites",
+    q83_Fb                   = "Facebook",
+    q83_instagram            = "Instagram",
+    q83_whatsup              = "WhatsApp",
+    q83_viber                = "Viber",
+    q83_telegram             = "Telegram",
+    q83_mobile_text          = "SMS",
+    q83_other                = "Other",
+    q83_prefer_not_answer    = "Prefer not to answer",
+    q83_other_specify        = "Other (specify)"
+  ),
+  q90 = c(
+    q90_drugs_used           = "Types of drugs used"
+  ),
+  q93 = c(
+    q93_1_walking            = "Walking",
+    q93_2_washing            = "Washing / Dressing",
+    q93_3_usual_activities   = "Usual activities",
+    q93_4_pain               = "Pain interfering with activities"
+  ),
+  q94 = c(
+    q94_5_depressed          = "Anxious / Depressed"
+  )
+)
+
+
 
