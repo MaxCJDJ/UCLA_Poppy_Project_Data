@@ -126,6 +126,42 @@ mod2_friendly <- c(
 mod2_choices <- setNames(names(mod2_friendly), mod2_friendly)
 
 
+# 2. Armenia Boundaries ------------------------------------------------------
+gadm_sp    <- geodata::gadm(country = "ARM", level = 1, path = ".")
+regions_sf <- st_as_sf(gadm_sp)
+
+# 3. Helper to pick module variables -----------------------------------------
+pick_vars <- function(prefixes) {
+  pattern <- paste0("^(", paste(prefixes, collapse = "|"), ")")
+  grep(pattern, names(df_tcwp), value = TRUE)
+}
+
+module_vars <- list(
+  `2` = pick_vars(c("q13_", "q16_", "q17_", "q18_", "q19_", "q20_", "q21_")),
+  `3` = pick_vars(c("q22_", "q23_")),
+  `4` = pick_vars(c("q27_", "q28_", "q29_")),
+  `5` = pick_vars(c(
+    paste0("q", 30:44, "_")
+  )),
+  `6` = pick_vars(c(
+    "q45_",  # Why choose this community (check‐all)
+    "q46_",  # Planning to leave current accommodation?
+    "q47_",  # Reasons for leaving current accommodation (check‐all)
+    "q48_",  # Stay in Armenia vs. move?
+    "q49_",  # Reasons for planning to move (check‐all)
+    "q50_",  # Destination country
+    "q51_",  # Why that country (check‐all)
+    "q52_",  # Missing documents?
+    "q53_"   # Types of documents missing (check‐all)
+  )),
+  `7` = pick_vars(c(
+    "q54_", "q55_", "q56_", "q57_",
+    "q58_", "q59_", "q60_", "q61_",
+    "q62_", "q63_", "q64_"
+  )),
+  `8` = pick_vars(c("q65_", "q66_", "q68_", "q69_")),
+  `9` = pick_vars(c("q81_", "q82_", "q83_", "q84_", "q85_", "q86_", "q87_", "q88_", "q89_", "q90_", "q91_", "q92_", "q93_", "q94_"))
+)
 
 
 
