@@ -1396,7 +1396,7 @@ server <- function(input, output, session) {
   })
 
   
-  ## Panel 6: Intentions & Perspectives — server adjustments ------------------
+  ## Panel 6: Intentions & Perspectives —------------------------------------
   
   # Q45: Why did you choose this community?
   output$mod6_choose_comm <- renderPlotly({
@@ -1510,5 +1510,49 @@ server <- function(input, output, session) {
       layout(xaxis = list(title="", tickangle = -45),
              yaxis = list(title="Count"))
   })
+  
+  
+  # Panel 7: Socio-Economic Status —------------------------------------—-----
+  
+  output$tbl7 <- renderDT({
+    req(input$var7)
+    var <- input$var7
+    
+    if (var %in% c("q56_rooms", "q58_amount")) {
+      df_tcwp %>%
+        select(Value = .data[[var]]) %>%
+        filter(!is.na(Value)) %>%
+        datatable(options = list(pageLength = 10, autoWidth = TRUE))
+    } else {
+      df_tcwp %>%
+        filter(!is.na(.data[[var]])) %>%
+        count(Value = .data[[var]], name = "Count") %>%
+        arrange(desc(Count)) %>%
+        datatable(options = list(pageLength = 10, autoWidth = TRUE))
+    }
+  })
+  
+  output$plt7 <- renderPlot({
+    req(input$var7)
+    var   <- input$var7
+    label <- mod7_friendly[[var]]
+    
+    if (var %in% c("q56_rooms", "q58_amount")) {
+      ggplot(df_tcwp, aes(x = .data[[var]])) +
+        geom_histogram(bins = 10, na.rm = TRUE) +
+        labs(x = label, y = "Count", title = paste("Distribution of", label)) +
+        theme_minimal(base_size = 14)
+    } else {
+      df_tcwp %>%
+        filter(!is.na(.data[[var]])) %>%
+        count(Value = .data[[var]], name = "n") %>%
+        ggplot(aes(x = Value, y = n)) +
+        geom_col() +
+        labs(x = label, y = "Count", title = label) +
+        theme_minimal(base_size = 14) +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    }
+  })
+  
   
   
