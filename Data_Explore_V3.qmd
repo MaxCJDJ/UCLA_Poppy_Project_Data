@@ -75,6 +75,15 @@ message("\n-- After converting labelled → factor --------------------------")
 glimpse(df_tcwp)
 ```
 
+# 6. Overall summary with skim() -------------------------------------------
+```{r}
+# 6. Provide a quick summary of every column with skimr
+message("\n-- skimr summary -----------------------------------------------")
+skim(df_tcwp)
+```
+
+
+
 
 
 
