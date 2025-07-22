@@ -163,5 +163,45 @@ module_vars <- list(
   `9` = pick_vars(c("q81_", "q82_", "q83_", "q84_", "q85_", "q86_", "q87_", "q88_", "q89_", "q90_", "q91_", "q92_", "q93_", "q94_"))
 )
 
+# ────────────────────────────────────────────────────────────────────────────
+# Friendly labels for Panel 5 (single-choice metrics)
+# ────────────────────────────────────────────────────────────────────────────
+mod5_friendly <- c(
+  # Q30: Which services did you ever need? (Yes/No)
+  q30_healthcare_service        = "Needed healthcare services?",
+  q30_food_assistance           = "Needed food assistance?",
+  q30_childcare                 = "Needed childcare?",
+  q30_education                 = "Needed education support?",
+  q30_legal_counseling          = "Needed legal counseling?",
+  q30_psycological_counseling   = "Needed psychological counseling?",
+  q30_shelter_opportunity       = "Needed shelter opportunities?",
+  q30_household_goods           = "Needed household goods?",
+  q30_clothing                  = "Needed clothing?",
+  q30_financial_assistance      = "Needed financial assistance?",
+  # Q30 follow-ups on coverage/offering
+  q30_1_services_not_covered          = "Services needed but not covered?",
+  q30_1_services_not_covered_other    = "Other services not covered (specify)",
+  q30_2_services_not_offered          = "Services not offered at all?",
+  q30_2_services_not_offered_other    = "Other services not offered (specify)",
+  
+  # Q31–Q32: Social services
+  q31_need_social_services      = "Needed social services?",
+  q32_get_social_services       = "Received social services?",
+  
+  # Q34–Q35: Mental health support
+  q34_need_mental_health        = "Needed mental health support?",
+  q35_get_mental_health         = "Received mental health support?",
+  
+  # Q37–Q38: Legal support
+  q37_need_legal_support        = "Needed legal support?",
+  q38_get_legal                 = "Received legal support?",
+  
+  # Q40–Q43: Doctor / pharmacy / meds
+  q40_need_doctor               = "Needed to see a doctor?",
+  q41_go_doctor                 = "Went to a doctor?",
+  q42_go_pharmacy               = "Went to a pharmacy instead?",
+  q43_recommend_medic           = "Recommended to buy medicine?",
+  q43_other_specify             = "Other medicine recommendation (specify)"
+)
 
 
