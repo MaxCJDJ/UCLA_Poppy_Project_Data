@@ -405,7 +405,7 @@ mod5_choices <- setNames(mod5_vars_with_data, unname(mod5_friendly[mod5_vars_wit
 
 mod6_choose_labels <- c(
   q45_family_friends   = "Have family or friends here",
-  q45_accomodation     = "Accommodation opportunities",  #miss spelling. 
+  q45_accomodation     = "Accommodation opportunities",
   q45_work             = "Work opportunities",
   q45_edu              = "Education opportunities",
   q45_support          = "Benefits & support available",
@@ -419,7 +419,6 @@ mod6_choose_labels <- c(
   q45_prefer_no_answer = "Prefer no answer",
   q45_other_specify    = "Other (specify)"
 )
-
 mod6_reasons_leave_labels <- c(
   q47_asked_leave_accom  = "Have been asked to leave",
   q47_rental_run_out     = "Rental/grace period runs out",
@@ -435,7 +434,6 @@ mod6_reasons_leave_labels <- c(
   q47_prefer_no_answer   = "Prefer no answer",
   q47_other_specify      = "Other (specify)"
 )
-
 mod6_reasons_move_labels <- c(
   q49_lack_house        = "Lack of adequate housing",
   q49_lack_support      = "Lack of support programming",
@@ -450,7 +448,6 @@ mod6_reasons_move_labels <- c(
   q49_prefer_no_asnwer  = "Prefer no answer",      
   q49_other_specify     = "Other (specify)"
 )
-
 mod6_reasons_country_labels <- c(
   q51_family_friends   = "Have family or friends there",
   q51_language         = "Language spoken",
@@ -465,7 +462,6 @@ mod6_reasons_country_labels <- c(
   q51_prefer_no_answer = "Prefer no answer",
   q51_other_specify    = "Other (specify)"
 )
-
 mod6_types_docs_labels <- c(
   q53_passport          = "Passport",
   q53_military          = "Military documents",
@@ -481,92 +477,6 @@ mod6_types_docs_labels <- c(
   q53_other             = "Other",
   q53_prefer_no_answer  = "Prefer no answer",
   q53_other_specify     = "Other (specify)"
-)
-
-## Panel 6 — friendly labels for each check‐all question
-mod6_choose_labels <- c(
-  q45_friends            = "Have family or friends here",
-  q45_accommodation      = "Accommodation opportunities",
-  q45_work               = "Work opportunities",
-  q45_education          = "Education opportunities",
-  q45_support            = "Benefits & support available",
-  q45_proximity          = "Proximity to capital city",
-  q45_not_planned        = "Not planned / no reason",
-  q45_no_alternative     = "No other alternative",
-  q45_cost               = "Cost of housing",
-  q45_familiar           = "Familiar city / been here before",
-  q45_advised            = "Was advised",
-  q45_other              = "Other"
-)
-
-mod6_reasons_leave_labels <- c(
-  q47_asked              = "Have been asked to leave",
-  q47_grace              = "Rental/grace period runs out",
-  q47_free_program       = "Free accommodation ends",
-  q47_cannot_afford      = "Cannot afford rent",
-  q47_not_enough_space   = "Not enough space",
-  q47_poor_conditions    = "Poor conditions",
-  q47_longterm_search    = "Looking for long-term",
-  q47_move_city          = "Moving to another city",
-  q47_found_better       = "Found better accommodation",
-  q47_not_safe           = "Don't feel safe",
-  q47_other              = "Other"
-)
-
-mod6_reasons_move_labels <- c(
-  q49_housing           = "Lack of adequate housing",
-  q49_support_programs  = "Lack of support programming",
-  q49_education         = "Lack of education options",
-  q49_utilities         = "Lack of basic utilities",
-  q49_employment        = "Cannot find work",
-  q49_unaffordable      = "Cannot afford to live",
-  q49_with_relatives    = "Moving in with relatives",
-  q49_security          = "Security reasons",
-  q49_discrimination    = "Discrimination/harassment",
-  q49_other             = "Other"
-)
-
-mod6_reasons_country_labels <- c(
-  q51_friends       = "Have family or friends there",
-  q51_language      = "Language spoken",
-  q51_work          = "Work opportunities",
-  q51_education     = "Education opportunities",
-  q51_health        = "Specific health needs",
-  q51_benefits      = "Benefits & support",
-  q51_accommodation = "Accommodation opportunities",
-  q51_asylum        = "Temporary protection / asylum",
-  q51_cost_living   = "Lower cost of living",
-  q51_other         = "Other"
-)
-
-mod6_types_docs_labels <- c(
-  q53_passport        = "Passport",
-  q53_military        = "Military documents",
-  q53_driving_license = "Driving license",
-  q53_birth_cert      = "Birth certificate",
-  q53_marriage_cert   = "Marriage certificate",
-  q53_divorce_cert    = "Divorce certificate",
-  q53_employment      = "Employment proofs",
-  q53_ownership       = "Ownership certificates",
-  q53_education_cert  = "Educational certificates",
-  q53_disability      = "Disability proofs",
-  q53_medical         = "Medical documents",
-  q53_other           = "Other"
-)
-
-mod7_friendly <- c(
-  q54_rating           = "Standard of Living",
-  q55_housing_type     = "Housing Situation",
-  q56_rooms            = "Number of Rooms",
-  q57_satisfaction     = "Housing Satisfaction",
-  q58_pay_flag         = "Pay Rent/Mortgage (Yes/No)",
-  q58_amount           = "Rent/Mortgage Amount (AMD)",
-  q59_heating          = "Primary Heating Source",
-  q60_water            = "Drinking Water Source",
-  q61_expenditure      = "Monthly Expenditure Range",
-  q62_needs_met        = "Income Meets Basic Needs",
-  q63_food_worry       = "Worry About Food Insecurity",
-  q64_future_hardship  = "Perceived Future Hardships"
 )
 
 ## ────────────────────────────────────────────────────────────────────────────
