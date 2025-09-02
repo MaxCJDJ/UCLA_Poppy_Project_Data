@@ -532,7 +532,42 @@ mod8_friendly <- c(
   q72_functioning_suffer              = "Impaired Functioning Due to Trauma"
 )
 
-## swap names/values so the dropdown shows the friendly labels
+# Alias the known typo so selection works
+alias_map_mod8 <- list(
+  q71_20_troube_falling_asleep = c("q71_20_troube_falling_asleep", "q71_20_trouble_falling_asleep")
+)
+resolve_mod8_col <- function(var, df = df_tcwp) {
+  if (grepl("^at_least_\\d+$", var)) return(var)
+  cand <- (alias_map_mod8[[var]] %||% var)
+  cand <- cand[cand %in% names(df)]
+  if (length(cand)) cand[[1]] else var
+}
+mod8_enriched <- shiny::reactive({
+  df <- df_tcwp
+  total_col <- grep("^q71_.*(total|sum|score)$", names(df), value = TRUE, ignore.case = TRUE)
+  if (length(total_col)) {
+    total <- suppressWarnings(as.numeric(df[[ total_col[[1]] ]]))
+  } else {
+    qcols <- grep("^q71_\\d+", names(df), value = TRUE)
+    if (length(qcols)) {
+      mat <- df |>
+        dplyr::select(dplyr::all_of(qcols)) |>
+        dplyr::mutate(dplyr::across(dplyr::everything(), ~ suppressWarnings(as.numeric(.)))) |>
+        as.matrix()
+      total  <- rowSums(mat, na.rm = TRUE)
+      all_na <- apply(mat, 1, function(r) all(is.na(r)))
+      total[all_na] <- NA_real_
+    } else {
+      total <- rep(NA_real_, nrow(df))
+    }
+  }
+  if (!"q71_total" %in% names(df)) df$q71_total <- total
+  mk <- function(cut) ifelse(is.na(total), NA_character_, ifelse(total >= cut, "Yes", "No"))
+  df$at_least_20 <- mk(20)
+  df$at_least_19 <- mk(19)
+  df$at_least_18 <- mk(18)
+  df
+})
 mod8_choices <- setNames(names(mod8_friendly), mod8_friendly)
 
 ## ────────────────────────────────────────────────────────────────────────────
