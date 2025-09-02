@@ -238,7 +238,7 @@ alias_map_mod5 <- list(
   q43_other_specify   = c("q43_other_specify",  "RECOMMENDED_BUY_MEDICINE_OTHER")
 )
 
-# This helps mes resolve canonical var to the first matching existing column in df_tcwp
+# This helps me resolve canonical var to the first matching existing column in df_tcwp
 resolve_mod5_col <- function(var) {
   cand <- alias_map_mod5[[var]] %||% var
   cand <- cand[cand %in% names(df_tcwp)]
@@ -258,54 +258,40 @@ df_tcwp <- readRDS("need the actual data here.rds") %>%
   
   # Add cleaner and more consistent variable names for core demographic fields
   mutate(
-    household_id     = q3_household_ID,         # Unique household ID
-    participant_id   = q4_participant_ID,       # Unique participant ID
-    main_respondent  = MAIN_RESPONDENT,         # Flag for main household respondent
-    region_name      = as_factor(q7_marz),      # Region (province) of interview
-    age              = q9_b_age,                # Respondent’s age
-    gender           = as_factor(q10_gender),   # Gender of respondent
-    nationality      = as_factor(q11_nationality), # Nationality of respondent
-    
-    # Recode displacement region before Sept. 2023 into labeled factors
-    region_before    = factor(
-      q27_region_Artsakh_44_day,
-      levels = 1:5,
-      labels = c("Artsakh", "Martuni", "Askeran", "Hadrut", "Shushi")
-    ),
-    
-    # Recode displacement region after Sept. 2023 into labeled factors
-    region_after     = factor(
-      q28_region_Artsakh_September,
-      levels = 1:5,
-      labels = c("Artsakh", "Martuni", "Askeran", "Hadrut", "Shushi")
-    )
+    household_id     = q3_household_ID,
+    participant_id   = q4_participant_ID,
+    main_respondent  = MAIN_RESPONDENT,
+    region_name      = forcats::as_factor(q7_marz),
+    age              = q9_b_age,
+    gender           = forcats::as_factor(q10_gender),
+    nationality      = forcats::as_factor(q11_nationality),
+    region_before    = normalize_region_artsakh(q27_region_Artsakh_44_day),
+    region_after     = normalize_region_artsakh(q28_region_Artsakh_September)
   ) %>%
-  
-  # ───────────────────────────────────────────────────────────
-  # FIX Panel 7 raw → friendly column names
-  # Rename difficult-to-read variable names to more readable labels
-  # Used in housing and standard of living module (Panel 7)
-  # ───────────────────────────────────────────────────────────
+  # Panel 7 name fixes
   rename(
-    q54_rating           = q54_standart_of_living,    # Perceived standard of living
-    q55_housing_type     = q55_housing_situation,     # Type of housing
-    q56_rooms            = q56_rooms_in_house,        # Number of rooms
-    q57_satisfaction     = q57_saisfied_house,        # Housing satisfaction
-    q58_pay_flag         = q58_pay_rent_,             # Do they pay rent?
-    q58_amount           = q58_yes_specify,           # Rent amount if yes
-    q60_water            = q60_source_water,          # Main water source
-    q62_needs_met        = q62_enough_basic_needs,    # Are basic needs met?
-    q63_food_worry       = q63_worried_enough_food,   # Worried about food insecurity
-    q64_future_hardship  = q64_hardship               # Anticipated hardship
+    q54_rating           = q54_standart_of_living,
+    q55_housing_type     = q55_housing_situation,
+    q56_rooms            = q56_rooms_in_house,
+    q57_satisfaction     = q57_saisfied_house,
+    q58_pay_flag         = q58_pay_rent_,
+    q58_amount           = q58_yes_specify,
+    q60_water            = q60_source_water,
+    q62_needs_met        = q62_enough_basic_needs,
+    q63_food_worry       = q63_worried_enough_food,
+    q64_future_hardship  = q64_hardship
   ) %>%
-  
-  # ───────────────────────────────────────────────────────────
-  # Ensure proper numeric format for plotting histograms
-  # ───────────────────────────────────────────────────────────
+  # Numeric coercions used in plotting
   mutate(
-    q56_rooms  = as.numeric(q56_rooms),               # Convert room count to numeric
-    q58_amount = readr::parse_number(q58_amount)      # Extract numeric value from rent (text input)
-  )
+    q56_rooms  = as.numeric(q56_rooms),
+    q58_amount = readr::parse_number(q58_amount)
+  ) %>%
+  # ---- Encoding normalization (key fix) ----
+mutate(
+  across(any_of("q48_1_which_marz_city"), fix_double_utf8_mojibake),
+  across(where(is.character), repair_arm),
+  across(where(is.factor), ~ forcats::fct_relabel(.x, repair_arm))
+)
 
 # 1a. Friendly labels for Panel 2 ----------------------------------------------
 mod2_friendly <- c(
