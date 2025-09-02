@@ -1355,112 +1355,201 @@ server <- function(input, output, session) {
   
   ## Panel 3: Household Composition ------------------------------------------
   
-  # A) Size distribution
   output$hh_size_plot <- renderPlotly({
-    req(input$hh_size_var)
-    var <- input$hh_size_var
+    req(input$hh_size_var); var <- input$hh_size_var
     df_tcwp %>%
       filter(!is.na(!!sym(var))) %>%
       count(size = !!sym(var)) %>%
       plot_ly(x = ~size, y = ~n, type = "bar") %>%
-      layout(
-        xaxis = list(title = "Household size"),
-        yaxis = list(title = "Count")
-      )
+      layout(xaxis = list(title = "Household size"), 
+             yaxis = list(title = "Count"))
   })
   
-  # B) Member‐level pivot + plot
   members_long <- reactive({
     df_tcwp %>%
-      # grab _all_ q23_*_*_* columns
       select(matches("^q23_")) %>%
       mutate(across(everything(), as.character)) %>%
-      # pivot into long, capturing:
-      #   * question (e.g. "living_with_respond")
-      #   * member_index (the final “_1", "_2", …)
       pivot_longer(
-        cols        = matches("^q23_\\d+_.+_\\d+$"),
-        names_to    = c("q_num", "question", "member_index"),
+        cols = matches("^q23_\\d+_.+_\\d+$"),
+        names_to = c("q_num", "question", "member_index"),
         names_pattern = "q23_(\\d+)_(.+)_(\\d+)$",
-        values_to   = "value"
+        values_to = "value"
       ) %>%
       filter(!is.na(value) & value != "")
   })
-  
-  # friendly labels for the sub‐questions
   member_labels <- c(
-    year_birth              = "Year of birth",
-    gender                  = "Gender",
-    relation_respondent     = "Relation to respondent",
-    current_health_status   = "Current status (alive/dead)",
-    living_with_respond     = "Lives with respondent?",
-    employment              = "Employment status"
+    year_birth = "Year of birth",
+    gender = "Gender",
+    relation_respondent = "Relation to respondent",
+    current_health_status = "Current status (alive/dead)",
+    living_with_respond = "Lives with respondent?",
+    employment = "Employment status"
   )
-  
-  output$member_title <- renderText({
-    member_labels[[ input$member_var ]]
-  })
-  
+  output$member_title <- renderText({ member_labels[[ input$member_var ]] })
   output$member_plot <- renderPlotly({
     req(input$member_var)
     members_long() %>%
       filter(question == input$member_var) %>%
       count(answer = value) %>%
       plot_ly(x = ~answer, y = ~n, type = "bar") %>%
-      layout(
-        xaxis = list(title = member_labels[[input$member_var]]),
-        yaxis = list(title = "Count")
-      )
+      layout(xaxis = list(title = member_labels[[input$member_var]]),
+             yaxis = list(title = "Count"))
   })
-
   
-  ## Panel 4: Population Movement — SERVER ------------------------------------
+  ## Panel 4: Population Movement --------------------------------------------
   
-  ## A) Region before the war
+  resolve_nmoves_var <- function(df = df_tcwp) {
+    priority <- c(
+      "q29_change_living_frequency",
+      "q29_change_living_frequesncy",
+      "q29_change_living_frquesncy",
+      "q29_nmoves","q29_number_of_moves","q29_moves"
+    )
+    hit <- priority[priority %in% names(df)]; if (length(hit)) return(hit[[1]])
+    q29_cols <- grep("^q29_", names(df), value = TRUE)
+    cand <- grep("(move|moves|chang|change|freq(u|e)?n?c?y?|freq$|number)",
+                 q29_cols, value = TRUE, ignore.case = TRUE)
+    if (!length(cand)) return(NA_character_)
+    score <- sapply(cand, function(nm) {
+      v <- df[[nm]]; num <- suppressWarnings(readr::parse_number(as.character(v)))
+      mean(is.finite(num), na.rm = TRUE)
+    })
+    cand[which.max(score)]
+  }
+  coerce_nmoves <- function(v) {
+    x <- as.character(v) |> trimws()
+    x[x %in% c("None","No","No moves","None/Zero","0 moves")] <- "0"
+    x[x %in% c("One","Once")]  <- "1"
+    x[x %in% c("Two","Twice")] <- "2"
+    num <- suppressWarnings(readr::parse_number(x))
+    num[!is.finite(num)] <- NA_real_
+    num
+  }
+  maybe_keep_missing <- function(before, after, keep_na = FALSE) {
+    lab <- "(Missing/NA)"
+    tibble::tibble(
+      before = ifelse(is.na(before) | before == "", lab, before),
+      after  = ifelse(is.na(after)  | after  == "", lab, after)
+    ) %>% { if (!keep_na) dplyr::filter(., before != lab, after != lab) else . }
+  }
+  p_empty <- function(title_txt) {
+    plotly::plotly_empty(type = "scatter", mode = "markers") %>%
+      layout(title = list(text = title_txt),
+             xaxis = list(visible = FALSE), yaxis = list(visible = FALSE),
+             showlegend = FALSE)
+  }
+  
   output$mod4_before_plot <- renderPlotly({
-    df_tcwp %>%
-      filter(!is.na(q27_region_Artsakh_44_day)) %>%
-      mutate(region_before = as_factor(q27_region_Artsakh_44_day)) %>%
-      count(region_before) %>%
-      plot_ly(x = ~region_before, y = ~n, type = "bar") %>%
-      layout(
-        xaxis = list(title = "Region before war", tickangle = -45),
-        yaxis = list(title = "# households"),
-        margin = list(b = 100)
-      )
+    keep_na <- isTRUE(input$mod4_keep_na)
+    sort_by <- input$mod4_sort %||% "count_desc"
+    d <- df_tcwp %>%
+      transmute(region = as.character(region_before)) %>%
+      mutate(region = ifelse(is.na(region) | region == "",
+                             "(Missing/NA)", region)) %>%
+      { if (!keep_na) dplyr::filter(., region != "(Missing/NA)") else . } %>%
+      count(region, name = "n")
+    if (!nrow(d)) return(p_empty("No region-before data available"))
+    xax <- if (sort_by == "alpha") {
+      list(title = "Region before war", tickangle = -45, 
+           categoryorder = "array", categoryarray = sort(d$region))
+    } else {
+      list(title = "Region before war", tickangle = -45, 
+           categoryorder = "total descending")
+    }
+    plot_ly(d, x = ~region, y = ~n, type = "bar") %>%
+      layout(xaxis = xax, yaxis = list(title = "# households"),
+             margin = list(b = 100))
   })
   
-  ## B) Region moved from (Sep 2023)
   output$mod4_after_plot <- renderPlotly({
-    df_tcwp %>%
-      filter(!is.na(q28_region_Artsakh_September)) %>%
-      mutate(region_after = as_factor(q28_region_Artsakh_September)) %>%
-      count(region_after) %>%
-      plot_ly(x = ~region_after, y = ~n, type = "bar") %>%
-      layout(
-        xaxis = list(title = "Region moved from (Sep 2023)", tickangle = -45),
-        yaxis = list(title = "# households"),
-        margin = list(b = 100)
-      )
+    keep_na <- isTRUE(input$mod4_keep_na)
+    sort_by <- input$mod4_sort %||% "count_desc"
+    d <- df_tcwp %>%
+      transmute(region = as.character(region_after)) %>%
+      mutate(region = ifelse(is.na(region) | region == "", "(Missing/NA)", region)) %>%
+      { if (!keep_na) dplyr::filter(., region != "(Missing/NA)") else . } %>%
+      count(region, name = "n")
+    if (!nrow(d)) return(p_empty("No region-after data available"))
+    xax <- if (sort_by == "alpha") {
+      list(title = "Region moved from (Sep 2023)", tickangle = -45,
+           categoryorder = "array", categoryarray = sort(d$region))
+    } else {
+      list(title = "Region moved from (Sep 2023)", tickangle = -45, 
+           categoryorder = "total descending")
+    }
+    plot_ly(d, x = ~region, y = ~n, type = "bar") %>%
+      layout(xaxis = xax, yaxis = list(title = "# households"),
+             margin = list(b = 100))
   })
   
-  
-  # C) # moves histogram + stats
   output$mod4_nmoves_hist <- renderPlotly({
-    df_tcwp %>%
-      filter(!is.na(q29_change_living_frquesncy)) %>%
-      plot_ly(x = ~q29_change_living_frquesncy, type = "histogram") %>%
-      layout(xaxis = list(title = "# moves"), yaxis = list(title = "Count"))
-  })
-  output$mod4_nmoves_stats <- renderText({
-    stats <- df_tcwp %>%
-      summarise(
-        mean   = mean(q29_change_living_frquesncy, na.rm = TRUE),
-        median = median(q29_change_living_frquesncy, na.rm = TRUE)
-      )
-    sprintf("Mean = %.2f, median = %d", stats$mean, stats$median)
+    col <- resolve_nmoves_var(); if (is.na(col)) return(p_empty("Q29 '# of moves' column not found"))
+    df <- df_tcwp %>% mutate(nmoves = coerce_nmoves(.data[[col]])) %>% filter(is.finite(nmoves) & nmoves >= 0)
+    if (!nrow(df)) return(p_empty("No numeric values for # of moves"))
+    xmax <- max(df$nmoves, na.rm = TRUE)
+    plot_ly(df, x = ~nmoves, type = "histogram", 
+            xbins = list(start = -0.5, end = xmax + 0.5, size = 1)) %>%
+      layout(xaxis = list(title = "# of moves since Sep 19, 2023"), 
+             yaxis = list(title = "Count"))
   })
   
+  output$mod4_nmoves_stats <- renderText({
+    col <- resolve_nmoves_var(); if (is.na(col)) return("Q29 '# of moves' column not found.")
+    df <- df_tcwp %>% mutate(nmoves = coerce_nmoves(.data[[col]])) %>% filter(is.finite(nmoves) & nmoves >= 0)
+    if (!nrow(df)) return("No numeric values for # of moves.")
+    s <- df %>% summarise(
+      mean = mean(nmoves), median = median(nmoves),
+      p75 = quantile(nmoves, 0.75), p90 = quantile(nmoves, 0.90),
+      ge1 = mean(nmoves >= 1), ge2 = mean(nmoves >= 2), ge3 = mean(nmoves >= 3)
+    )
+    sprintf("Mean = %.2f, median = %.1f, P75 = %.1f, P90 = %.1f | ≥1: %.1f%%, ≥2: %.1f%%, ≥3: %.1f%%",
+            s$mean, s$median, s$p75, s$p90, 100*s$ge1, 100*s$ge2, 100*s$ge3)
+  })
+  
+  output$mod4_flow <- renderPlotly({
+    keep_na <- isTRUE(input$mod4_keep_na)
+    min_n   <- as.integer(input$mod4_min_flow %||% 2)
+    d <- maybe_keep_missing(
+      before = as.character(df_tcwp$region_before),
+      after  = as.character(df_tcwp$region_after),
+      keep_na = keep_na
+    )
+    flows <- d %>% count(before, after, name = "n") %>% filter(n >= min_n) %>% arrange(desc(n))
+    if (!nrow(flows)) return(p_empty("No flow data available (check filters)"))
+    nodes <- tibble::tibble(name = unique(c(flows$before, flows$after)))
+    flows <- flows %>% mutate(
+      source = match(before, nodes$name) - 1,
+      target = match(after,  nodes$name) - 1
+    )
+    plot_ly(
+      type = "sankey", arrangement = "snap",
+      node = list(label = nodes$name, pad = 10, thickness = 14),
+      link = list(source = flows$source, target = flows$target, value = flows$n)
+    ) %>% layout(margin = list(l = 20, r = 20, t = 20, b = 20))
+  })
+  
+  output$mod4_flow_tbl <- renderDT({
+    keep_na <- isTRUE(input$mod4_keep_na)
+    min_n   <- as.integer(input$mod4_min_flow %||% 2)
+    lab     <- "(Missing/NA)"
+    d <- df_tcwp %>%
+      transmute(`Region before` = as.character(region_before),
+                `Region after (Sep 2023)` = as.character(region_after)) %>%
+      mutate(
+        `Region before`           = ifelse(is.na(`Region before`) | `Region before` == "", lab, `Region before`),
+        `Region after (Sep 2023)` = ifelse(is.na(`Region after (Sep 2023)`) | `Region after (Sep 2023)` == "", lab, `Region after (Sep 2023)`)
+      ) %>%
+      { if (!keep_na) dplyr::filter(., `Region before` != lab, `Region after (Sep 2023)` != lab) else . } %>%
+      count(`Region before`, `Region after (Sep 2023)`, 
+            name = "Count", sort = TRUE) %>%
+      filter(Count >= min_n)
+    if (!nrow(d)) {
+      return(DT::datatable(tibble::tibble(Note = "No pairs at current filters"),
+                           options = list(dom = 't'), rownames = FALSE))
+    }
+    datatable(d, options = list(pageLength = 8, autoWidth = TRUE), 
+              rownames = FALSE)
+  })
 
   ## Panel 5: Access & Utilization of Services — SERVER -----------------------
   
