@@ -1026,30 +1026,17 @@ server <- function(input, output, session) {
     )
   })
   
-  # Q9.b: Age distribution
-  output$age_dist <- renderPlotly({
-    plot_ly(df_tcwp, x = ~q9_b_age, type = "histogram", nbinsx = 15) %>%
-      layout(
-        title = "Q9.b Age (years)",
-        xaxis = list(title = "Age"),
-        yaxis = list(title = "Count")
-      )
-  })
-  
-  # Q10: Gender breakdown
+  # Gender breakdown
   output$gender_bar <- renderPlotly({
     df_tcwp %>%
       count(q10_gender) %>%
       filter(!is.na(q10_gender)) %>%
       plot_ly(x = ~q10_gender, y = ~n, type = "bar") %>%
-      layout(
-        title = "Q10 Gender",
-        xaxis = list(title = ""),
-        yaxis = list(title = "Count")
-      )
+      layout(title = "Q10 Gender", xaxis = list(title = ""), 
+             yaxis = list(title = "Count"))
   })
   
-  # Q11: Nationality breakdown
+  # Nationality breakdown
   output$nat_bar <- renderPlotly({
     df_tcwp %>%
       count(q11_nationality) %>%
@@ -1057,21 +1044,14 @@ server <- function(input, output, session) {
       arrange(n) %>%
       mutate(nationality = factor(q11_nationality, levels = q11_nationality)) %>%
       plot_ly(x = ~n, y = ~nationality, type = "bar", orientation = "h") %>%
-      layout(
-        title = "Q11 Nationality",
-        xaxis = list(title = "Count"),
-        yaxis = list(title = "")
-      )
+      layout(title = "Q11 Nationality", xaxis = list(title = "Count"),
+             yaxis = list(title = ""))
   })
   
-  # Q7: Marz map
+  # Marz map
   output$map1 <- renderLeaflet({
-    rc <- df_tcwp %>%
-      filter(!is.na(q7_marz)) %>%
-      count(q7_marz, name = "n")
-    mdf <- regions_sf %>%
-      left_join(rc, by = c("NAME_1" = "q7_marz")) %>%
-      mutate(n = replace_na(n, 0))
+    rc <- df_tcwp %>% filter(!is.na(q7_marz)) %>% count(q7_marz, name = "n")
+    mdf <- regions_sf %>% left_join(rc, by = c("NAME_1" = "q7_marz")) %>% mutate(n = replace_na(n, 0))
     pal <- colorBin("YlOrRd", domain = mdf$n, bins = 5)
     leaflet(mdf) %>%
       addProviderTiles(providers$CartoDB.Positron) %>%
@@ -1081,6 +1061,177 @@ server <- function(input, output, session) {
         highlightOptions = highlightOptions(weight = 2, color = "#000")
       ) %>%
       addLegend(pal = pal, values = ~n, title = "Respondents")
+  })
+  
+  # I will have a single clear Q22 size column if present
+  get_hh_size_col <- reactive({
+    preferred <- c("q22_household_size", "q22_total_members", "q22_size")
+    cand_pref <- preferred[preferred %in% names(df_tcwp)]
+    if (length(cand_pref)) return(cand_pref[[1]])
+    cand_any <- grep("^q22_", names(df_tcwp), value = TRUE)
+    if (length(cand_any)) return(cand_any[[1]])
+    NA_character_
+  })
+  
+  # Median age (with IQR)
+  output$vb_age_median <- renderValueBox({
+    a <- suppressWarnings(as.numeric(df_tcwp$q9_b_age))
+    a <- a[is.finite(a)]
+    if (!length(a)) {
+      valueBox("—", "Median Age (Q9.b)", icon = icon("user"), 
+               color = "light-blue")
+    } else {
+      med <- stats::median(a, na.rm = TRUE)
+      q25 <- stats::quantile(a, 0.25, na.rm = TRUE, names = FALSE)
+      q75 <- stats::quantile(a, 0.75, na.rm = TRUE, names = FALSE)
+      valueBox(sprintf("%.0f (IQR %.0f–%.0f)", med, q25, q75),
+               "Median Age (Q9.b)", icon = icon("user"), color = "light-blue")
+    }
+  })
+  
+  # Median household size (with IQR)
+  output$vb_hhsize_median <- renderValueBox({
+    col <- get_hh_size_col()
+    if (is.na(col)) {
+      valueBox("—", "Median Household Size (Q22)", icon = icon("house"), 
+               color = "olive")
+    } else {
+      v <- suppressWarnings(as.numeric(df_tcwp[[col]]))
+      v <- v[is.finite(v)]
+      if (!length(v)) {
+        valueBox("—", "Median Household Size (Q22)", icon = icon("house"),
+                 color = "olive")
+      } else {
+        med <- stats::median(v, na.rm = TRUE)
+        q25 <- stats::quantile(v, 0.25, na.rm = TRUE, names = FALSE)
+        q75 <- stats::quantile(v, 0.75, na.rm = TRUE, names = FALSE)
+        valueBox(sprintf("%.0f (IQR %.0f–%.0f)", med, q25, q75),
+                 "Median Household Size (Q22)", icon = icon("house"), 
+                 color = "olive")
+      }
+    }
+  })
+  
+  # Household size distribution (Median & IQR overlays)
+  output$hh_size_overview <- renderPlotly({
+    col <- get_hh_size_col()
+    if (is.na(col)) {
+      return(plot_ly() %>% layout(
+        title = "Q22 household size not found",
+        xaxis = list(visible = FALSE), yaxis = list(visible = FALSE)))
+    }
+    df <- df_tcwp %>%
+      filter(!is.na(.data[[col]]), .data[[col]] != "") %>%
+      mutate(size = suppressWarnings(as.numeric(.data[[col]]))) %>%
+      filter(is.finite(size))
+    if (!nrow(df)) return(plot_ly())
+    med <- stats::median(df$size); q25 <- stats::quantile(df$size, 0.25); q75 <- stats::quantile(df$size, 0.75)
+    df %>% count(size) %>%
+      plot_ly(x = ~size, y = ~n, type = "bar") %>%
+      layout(
+        xaxis = list(title = "Household size"),
+        yaxis = list(title = "Count"),
+        shapes = list(
+          list(type="line", x0=med, x1=med, y0=0, y1=1, xref="x", yref="paper",
+               line=list(color="black", width=2)),
+          list(type="line", x0=q25, x1=q25, y0=0, y1=1, xref="x", yref="paper",
+               line=list(color="gray", dash="dash")),
+          list(type="line", x0=q75, x1=q75, y0=0, y1=1, xref="x", yref="paper",
+               line=list(color="gray", dash="dash"))
+        ),
+        annotations = list(
+          list(x = med, y = 1.02, xref="x", yref="paper",
+               text = paste0("Median ", round(med,1)),
+               showarrow = FALSE, yanchor="bottom"),
+          list(x = q25, y = 1.02, xref="x", yref="paper", 
+               text = paste0("Q1 ", round(q25,1)),
+               showarrow = FALSE, yanchor="bottom"),
+          list(x = q75, y = 1.02, xref="x", yref="paper", 
+               text = paste0("Q3 ", round(q75,1)),
+               showarrow = FALSE, yanchor="bottom")
+        )
+      )
+  })
+  
+  # Age histogram with overlays
+  output$age_dist_overview <- renderPlotly({
+    a <- suppressWarnings(as.numeric(df_tcwp$q9_b_age))
+    a <- a[is.finite(a) & a >= 0 & a <= 100]
+    if (!length(a)) {
+      return(plot_ly() %>% layout(
+        title = "Q9.b age not available",
+        xaxis = list(visible = FALSE), yaxis = list(visible = FALSE)))
+    }
+    med <- stats::median(a); q25 <- stats::quantile(a, 0.25); q75 <- stats::quantile(a, 0.75)
+    plot_ly(x = ~a, type = "histogram", nbinsx = 20) %>%
+      layout(
+        xaxis = list(title = "Age (years)"),
+        yaxis = list(title = "Count"),
+        shapes = list(
+          list(type="line", x0=med, x1=med, y0=0, y1=1, xref="x", yref="paper",
+               line=list(color="black", width=2)),
+          list(type="line", x0=q25, x1=q25, y0=0, y1=1, xref="x", yref="paper", 
+               line=list(color="gray", dash="dash")),
+          list(type="line", x0=q75, x1=q75, y0=0, y1=1, xref="x", yref="paper",
+               line=list(color="gray", dash="dash"))
+        ),
+        annotations = list(
+          list(x = med,  y = 1.02, xref="x", yref="paper",
+               text = paste0("Median ", round(med,0)),
+               showarrow = FALSE, yanchor="bottom"),
+          list(x = q25,  y = 1.02, xref="x", yref="paper", 
+               text = paste0("Q1 ", round(q25,0)),
+               showarrow = FALSE, yanchor="bottom"),
+          list(x = q75,  y = 1.02, xref="x", yref="paper", 
+               text = paste0("Q3 ", round(q75,0)),
+               showarrow = FALSE, yanchor="bottom")
+        )
+      )
+  })
+  
+  # Age pyramid by gender (5-year bands)
+  output$age_pyramid <- renderPlotly({
+    gcol <- if ("gender" %in% names(df_tcwp)) "gender"
+    else if ("q10_gender" %in% names(df_tcwp)) "q10_gender" else NA_character_
+    a <- suppressWarnings(as.numeric(df_tcwp$q9_b_age))
+    if (is.na(gcol) || !length(a)) {
+      return(plot_ly() %>% layout(
+        title = "Age/Gender not available",
+        xaxis = list(visible = FALSE), yaxis = list(visible = FALSE)))
+    }
+    a <- a[is.finite(a) & a >= 0 & a <= 100]; if (!length(a)) return(plot_ly())
+    brks <- seq(floor(min(a)/5)*5, ceiling(max(a)/5)*5 + 5, by = 5)
+    labs <- paste(brks[-length(brks)], brks[-1]-1, sep = "–")
+    d <- df_tcwp %>%
+      transmute(age  = suppressWarnings(as.numeric(q9_b_age)), 
+                sex0 = as.character(.data[[gcol]])) %>%
+      filter(is.finite(age)) %>%
+      mutate(
+        band = cut(age, breaks = brks, labels = labs, 
+                   right = TRUE, include.lowest = TRUE),
+        sex  = dplyr::case_when(
+          grepl("female|^f$", tolower(sex0)) ~ "Female",
+          grepl("male|^m$",   tolower(sex0)) ~ "Male",
+          TRUE ~ "Other/NA"
+        )
+      )
+    df_m <- d %>% filter(sex == "Male")   %>% count(band, name = "n")
+    df_f <- d %>% filter(sex == "Female") %>% count(band, name = "n")
+    all_bands <- data.frame(band = factor(labs, levels = labs))
+    df_m <- all_bands %>% left_join(df_m, by = "band") %>% mutate(n = tidyr::replace_na(n, 0))
+    df_f <- all_bands %>% left_join(df_f, by = "band") %>% mutate(n = tidyr::replace_na(n, 0))
+    plot_ly() %>%
+      add_bars(y = df_m$band, x = -df_m$n, name = "Male",   orientation = "h") %>%
+      add_bars(y = df_f$band, x =  df_f$n, name = "Female", orientation = "h") %>%
+      layout(
+        barmode = "overlay",
+        xaxis = list(title = "Count (← Male | Female →)",
+                     tickmode = "array",
+                     tickvals = c(-max(df_m$n), 0, max(df_f$n)),
+                     ticktext = c(max(df_m$n), 0, max(df_f$n))),
+        yaxis = list(title = "Age band"),
+        legend = list(x = 0.02, y = 0.98)
+      )
   })
 
   ## Panel 2: Pre‐Displacement & Employment ----------------------------------
