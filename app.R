@@ -1877,58 +1877,46 @@ server <- function(input, output, session) {
   
   ## Panel 9: Health Behaviors & Quality of Life ------------------------------
   
-  # helper to find actual q‐columns
-  resolve_col <- function(var) {
-    if (var %in% names(df_tcwp)) return(var)
-    grep(paste0("^", var, "_"), names(df_tcwp), value = TRUE)
+  resolve_col <- function(var, df = df_tcwp) {
+    if (var %in% names(df)) return(var)
+    if (var == "q94") {
+      cols <- c("q93_4_pain", "q93_5_depressed")
+      return(intersect(cols, names(df)))
+    }
+    grep(paste0("^", var, "(_|$)"), names(df), value = TRUE, ignore.case = TRUE)
   }
   
   matrix_vars  <- c("q82","q83","q90","q93","q94")
   numeric_vars <- c("q86","q87")
   
   output$tbl9 <- renderDT({
-    req(input$var9)
-    var  <- input$var9
-    cols <- resolve_col(var)
-    
+    req(input$var9); var <- input$var9; cols <- resolve_col(var)
     if (var %in% matrix_vars) {
       df_counts <- df_tcwp %>%
         select(all_of(cols)) %>%
         pivot_longer(everything(), names_to = "subq", values_to = "resp") %>%
         filter(!is.na(resp) & resp != "") %>%
-        mutate(
-          Question = mod9_friendly[[var]],
-          Source   = mod9_matrix_labels[[var]][subq]
-        ) %>%
-        # include Question in the grouping so it isn't dropped
+        mutate(Question = mod9_friendly[[var]],
+               Source = mod9_matrix_labels[[var]][subq]) %>%
         count(Question, Source, resp, name = "n") %>%
         pivot_wider(names_from = resp, values_from = n, values_fill = 0) %>%
         select(Question, Source, everything())
-      
     } else if (var %in% numeric_vars) {
       df_counts <- df_tcwp %>%
         mutate(raw = as.character(.data[[cols]])) %>%
         count(!!mod9_friendly[[var]] := raw, name = "Count")
-      
     } else {
       df_counts <- df_tcwp %>%
         filter(!is.na(.data[[cols]])) %>%
         count(!!mod9_friendly[[var]] := .data[[cols]], name = "Count")
     }
-    
-    datatable(
-      df_counts,
-      colnames = unname(make.names(names(df_counts), unique = TRUE)),
-      options  = list(pageLength = 10, autoWidth = TRUE)
-    )
+    datatable(df_counts, colnames = unname(make.names(names(df_counts),
+                                                      unique = TRUE)),
+              options  = list(pageLength = 10, autoWidth = TRUE))
   })
   
   output$plt9 <- renderPlot({
-    req(input$var9)
-    var  <- input$var9
-    lab  <- mod9_friendly[[var]]
-    cols <- resolve_col(var)
-    
+    req(input$var9); var <- input$var9; lab <- mod9_friendly[[var]]; cols <- resolve_col(var)
     if (var %in% matrix_vars) {
       df_tcwp %>%
         select(all_of(cols)) %>%
@@ -1940,22 +1928,16 @@ server <- function(input, output, session) {
         labs(x = "Response", y = "Count", title = lab) +
         theme_minimal(base_size = 14) +
         theme(axis.text.x = element_text(angle = 45, hjust = 1))
-      
     } else if (var %in% numeric_vars) {
       df_plot <- df_tcwp %>%
-        mutate(
-          raw = as.character(.data[[cols]]),
-          num = suppressWarnings(as.numeric(raw))
-        )
+        mutate(raw = as.character(.data[[cols]]),
+               num = suppressWarnings(as.numeric(raw)))
       non_num <- sum(is.na(df_plot$num) & df_plot$raw != "")
       ggplot(df_plot %>% filter(!is.na(num)), aes(x = num)) +
         geom_histogram(bins = 15) +
-        labs(
-          x = lab, y = "Count", title = lab,
-          subtitle = paste0(non_num, " non-numeric responses")
-        ) +
+        labs(x = lab, y = "Count", title = lab,
+             subtitle = paste0(non_num, " non-numeric responses")) +
         theme_minimal(base_size = 14)
-      
     } else {
       df_tcwp %>%
         filter(!is.na(.data[[cols]])) %>%
