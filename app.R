@@ -1551,9 +1551,8 @@ server <- function(input, output, session) {
               rownames = FALSE)
   })
 
-  ## Panel 5: Access & Utilization of Services — SERVER -----------------------
+  ## Panel 5: Access & Utilization of Services --------------------------------
   
-  ## Q33: Reasons for not getting social services
   output$reasons_social <- renderPlotly({
     df_tcwp %>%
       select(starts_with("q33_")) %>%
@@ -1561,22 +1560,19 @@ server <- function(input, output, session) {
       filter(sel == "Yes") %>%
       count(code) %>%
       mutate(label = recode(code,
-                            q33_lack_money              = "Lack of money/too expensive",
-                            q33_lack_transportation     = "Lack of transportation",
-                            q33_lack_time               = "Lack of time",
-                            q33_lack_documentation      = "Lack of documentation",
-                            q33_lack_services           = "No available services",
-                            q33_donot_trust_services    = "Didn’t trust services",
-                            q33_prefer_not_to_answer    = "Prefer not to answer",
-                            q33_other                   = "Other"
+                            q33_lack_money="Lack of money/too expensive",
+                            q33_lack_transportation="Lack of transportation",
+                            q33_lack_time="Lack of time",
+                            q33_lack_documentation="Lack of documentation",
+                            q33_lack_services="No available services",
+                            q33_donot_trust_services="Didn’t trust services",
+                            q33_prefer_not_to_answer="Prefer not to answer",
+                            q33_other="Other"
       )) %>%
-      plot_ly(x = ~n, y = ~reorder(label, n),
-              type = "bar", orientation = "h") %>%
-      layout(xaxis = list(title = "Count"),
-             yaxis = list(title = "Reason"))
+      plot_ly(x = ~n, y = ~reorder(label, n), type = "bar", orientation = "h") %>%
+      layout(xaxis = list(title = "Count"), yaxis = list(title = "Reason"))
   })
   
-  ## Q36: Reasons for not getting mental health support
   output$reasons_mental <- renderPlotly({
     df_tcwp %>%
       select(starts_with("q36_")) %>%
@@ -1584,24 +1580,21 @@ server <- function(input, output, session) {
       filter(sel == "Yes") %>%
       count(code) %>%
       mutate(label = recode(code,
-                            q36_lack_money            = "Lack of money/too expensive",
-                            q36_lack_transport        = "Lack of transportation",
-                            q36_lack_time             = "Lack of time",
-                            q36_lack_specialist       = "Lack of specialists",
-                            q36_no_believe_effect     = "Didn’t believe in effectiveness",
-                            q36_fear_diagnosis        = "Fear of diagnosis/treatment",
-                            q36_no_trust              = "Didn’t trust specialists",
-                            q36_prefer_selcare        = "Preferred self‐care",
-                            q36_prefer_not_answer     = "Prefer not to answer",
-                            q36_other                 = "Other"
+                            q36_lack_money="Lack of money/too expensive",
+                            q36_lack_transport="Lack of transportation",
+                            q36_lack_time="Lack of time",
+                            q36_lack_specialist="Lack of specialists",
+                            q36_no_believe_effect="Didn’t believe in effectiveness",
+                            q36_fear_diagnosis="Fear of diagnosis/treatment",
+                            q36_no_trust="Didn’t trust specialists",
+                            q36_prefer_selcare="Preferred self‐care",
+                            q36_prefer_not_answer="Prefer not to answer",
+                            q36_other="Other"
       )) %>%
-      plot_ly(x = ~n, y = ~reorder(label, n),
-              type = "bar", orientation = "h") %>%
-      layout(xaxis = list(title = "Count"),
-             yaxis = list(title = "Reason"))
+      plot_ly(x = ~n, y = ~reorder(label, n), type = "bar", orientation = "h") %>%
+      layout(xaxis = list(title = "Count"), yaxis = list(title = "Reason"))
   })
   
-  ## Q39: Reasons for not getting legal support
   output$reasons_legal <- renderPlotly({
     df_tcwp %>%
       select(starts_with("q39_")) %>%
@@ -1609,21 +1602,18 @@ server <- function(input, output, session) {
       filter(sel == "Yes") %>%
       count(code) %>%
       mutate(label = recode(code,
-                            q39_lack_money            = "Lack of money/too expensive",
-                            q39_lack_transport        = "Lack of transportation",
-                            q39_lack_time             = "Lack of time",
-                            q39_lack_specialist       = "Lack of specialists",
-                            q39_no_trust_specilaist   = "Didn’t trust specialists",
-                            q39_prefer_not_answer     = "Prefer not to answer",
-                            q39_other                 = "Other"
+                            q39_lack_money="Lack of money/too expensive",
+                            q39_lack_transport="Lack of transportation",
+                            q39_lack_time="Lack of time",
+                            q39_lack_specialist="Lack of specialists",
+                            q39_no_trust_specilaist="Didn’t trust specialists",
+                            q39_prefer_not_answer="Prefer not to answer",
+                            q39_other="Other"
       )) %>%
-      plot_ly(x = ~n, y = ~reorder(label, n),
-              type = "bar", orientation = "h") %>%
-      layout(xaxis = list(title = "Count"),
-             yaxis = list(title = "Reason"))
+      plot_ly(x = ~n, y = ~reorder(label, n), type = "bar", orientation = "h") %>%
+      layout(xaxis = list(title = "Count"), yaxis = list(title = "Reason"))
   })
   
-  ## Q44: Reasons for not going to a doctor
   output$reasons_doctor <- renderPlotly({
     df_tcwp %>%
       select(starts_with("q44_")) %>%
@@ -1631,50 +1621,51 @@ server <- function(input, output, session) {
       filter(sel == "Yes") %>%
       count(code) %>%
       mutate(label = recode(code,
-                            q44_lack_money          = "Lack of money/too expensive",
-                            q44_lack_transport       = "Lack of transportation",
-                            q44_lack_time            = "Lack of time",
-                            q44_fear_diagnosis       = "Fear of diagnosis/treatment",
-                            q44_no_trust             = "Didn’t trust providers",
-                            q44_self_treatment       = "Preferred self‐treatment",
-                            q44_prefer_not_answer    = "Prefer not to answer",
-                            q44_other                = "Other"
+                            q44_lack_money="Lack of money/too expensive",
+                            q44_lack_transport="Lack of transportation",
+                            q44_lack_time="Lack of time",
+                            q44_fear_diagnosis="Fear of diagnosis/treatment",
+                            q44_no_trust="Didn’t trust providers",
+                            q44_self_treatment="Preferred self‐treatment",
+                            q44_prefer_not_answer="Prefer not to answer",
+                            q44_other="Other"
       )) %>%
-      plot_ly(x = ~n, y = ~reorder(label, n),
-              type = "bar", orientation = "h") %>%
-      layout(xaxis = list(title = "Count"),
-             yaxis = list(title = "Reason"))
+      plot_ly(x = ~n, y = ~reorder(label, n), type = "bar", orientation = "h") %>%
+      layout(xaxis = list(title = "Count"), yaxis = list(title = "Reason"))
   })
   
-  # Single‐choice count table
   output$tbl5 <- renderDT({
-    req(input$var5)
+    req(input$var5); var <- input$var5; col <- resolve_mod5_col(var)
+    if (is.na(col)) {
+      return(datatable(
+        data.frame(Note = sprintf("Column for '%s' not found (looked for aliases).",
+                                  mod5_friendly[[var]] %||% var)),
+        options = list(pageLength = 5, autoWidth = TRUE), rownames = FALSE
+      ))
+    }
     df_tcwp %>%
-      filter(!is.na(.data[[input$var5]])) %>%
-      count(answer = .data[[input$var5]], name = "Count") %>%
+      filter(!is.na(.data[[col]])) %>%
+      count(answer = .data[[col]], name = "Count") %>%
       arrange(desc(Count)) %>%
-      datatable(options = list(pageLength = 10, autoWidth = TRUE))
+      datatable(options = list(pageLength = 10, autoWidth = TRUE),
+                rownames = FALSE)
   })
   
-  # Single‐choice bar chart
   output$plt5 <- renderPlotly({
     req(input$var5)
-    var   <- input$var5
-    label <- mod5_friendly[[var]]
-    
-    cnt <- df_tcwp %>%
-      filter(!is.na(.data[[var]])) %>%
-      count(answer = .data[[var]], name = "n")
-    
+    var <- input$var5; label <- mod5_friendly[[var]] %||% var; col <- resolve_mod5_col(var)
+    if (is.na(col)) {
+      return(plotly::plotly_empty(type = "scatter", mode = "markers") %>%
+               layout(title = sprintf("Variable not found in this dataset: %s",
+                                      label),
+                      xaxis = list(visible = FALSE), yaxis = list(visible = FALSE), 
+                      showlegend = FALSE))
+    }
+    cnt <- df_tcwp %>% filter(!is.na(.data[[col]])) %>% count(answer = .data[[col]], name = "n")
     plot_ly(cnt, x = ~answer, y = ~n, type = "bar") %>%
-      layout(
-        title  = label,
-        xaxis  = list(title = label, tickangle = -45),
-        yaxis  = list(title = "Count"),
-        margin = list(b = 100)
-      )
+      layout(title = label, xaxis = list(title = label, tickangle = -45),
+             yaxis = list(title = "Count"), margin = list(b = 100))
   })
-
   
   ## Panel 6: Intentions & Perspectives —------------------------------------
   
