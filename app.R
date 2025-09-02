@@ -577,26 +577,23 @@ mod8_choices <- setNames(names(mod8_friendly), mod8_friendly)
 # Friendly labels for Panel 9 --------------------------------------------
 mod9_friendly <- c(
   # Health behaviors
-  q84              = "Smoking status",
-  q85              = "Alcohol frequency",
-  q86              = "Days drinking per week",
-  q87              = "Drinks per occasion",
-  q88              = "Ever binge-drank",
-  q89              = "Ever used narcotic drugs",
-  q90              = "Types of drugs used",
-  q91              = "Household drug use",
-  q92              = "Self-rated health (last 30d)",
+  q84 = "Smoking status",
+  q85 = "Alcohol frequency",
+  q86 = "Days drinking per week",
+  q87 = "Drinks per occasion",
+  q88 = "Ever binge-drank",
+  q89 = "Ever used narcotic drugs",
+  q90 = "Types of drugs used",
+  q91 = "Household drug use",
+  q92 = "Self-rated health (last 30d)",
   # QoL sub-questions (check-all matrix)
-  q93              = "Problems with daily activities",
-  q94              = "Pain or anxious/depressed",
+  q93 = "Problems with daily activities",
+  q94 = "Pain or anxious/depressed",
   # Health information sources (frequency matrix)
-  q82              = "Info sources frequency",
-  q83              = "Preferred info methods"
+  q82 = "Info sources frequency",
+  q83 = "Preferred info methods"
 )
-
 mod9_choices <- setNames(names(mod9_friendly), mod9_friendly)
-
-
 mod9_matrix_labels <- list(
   q82 = c(
     q82_TV                   = "TV",
@@ -627,12 +624,32 @@ mod9_matrix_labels <- list(
     q93_1_walking            = "Walking",
     q93_2_washing            = "Washing / Dressing",
     q93_3_usual_activities   = "Usual activities",
-    q93_4_pain               = "Pain interfering with activities"
+    q93_4_pain               = "Pain interfering with activities",
+    q93_5_depressed          = "Anxious / Depressed"
   ),
-  q94 = c(
-    q94_5_depressed          = "Anxious / Depressed"
+  q94 = c( # map q94 to two q93 items (no native q94_* columns)
+    q93_4_pain               = "Pain interfering with activities",
+    q93_5_depressed          = "Anxious / Depressed"
   )
 )
+
+# --- Q48.1: decode numeric codes to text and coalesce with the original free-text ---
+if ("q48_1_which_marz_city_new" %in% names(df_tcwp)) {
+  q48_code_to_label <- c(
+    "0"="Zorak","1"="Yerevan","2"=NA_character_,"3"=NA_character_,
+    "4"="Vayots Dzor","5"="Syunik","6"="Sis","7"="Sayat-Nova","8"="Ranchpar",
+    "9"="Noramarg","10"="Nor Kyuri","11"="Nor Kharberd","12"="Masis","13"="Marmarashen",
+    "14"="Kharberd","15"="Khachpar","16"="Hovtashat","17"="Hayanist","18"="Getapnya",
+    "19"="Gegharkunik","20"="Ejmiadzin","21"=NA_character_,"22"="Azatashen",
+    "23"="Ayntap","24"="Ashtarak","25"="Artashat","26"="Armavir","27"="Ararat"
+  )
+  df_tcwp <- df_tcwp %>%
+    mutate(
+      q48_1_from_code = dplyr::recode(as.character(q48_1_which_marz_city_new), !!!q48_code_to_label),
+      q48_1_which_marz_city = dplyr::coalesce(as.character(q48_1_which_marz_city), q48_1_from_code),
+      q48_1_which_marz_city = repair_arm(q48_1_which_marz_city)
+    )
+}
 
 
 # 4. UI ----------------------------------------------------------------------
