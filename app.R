@@ -268,7 +268,7 @@ df_tcwp <- readRDS("need the actual data here.rds") %>%
     region_before    = normalize_region_artsakh(q27_region_Artsakh_44_day),
     region_after     = normalize_region_artsakh(q28_region_Artsakh_September)
   ) %>%
-  # Panel 7 name fixes
+  # Panel 7 name update
   rename(
     q54_rating           = q54_standart_of_living,
     q55_housing_type     = q55_housing_situation,
@@ -286,7 +286,7 @@ df_tcwp <- readRDS("need the actual data here.rds") %>%
     q56_rooms  = as.numeric(q56_rooms),
     q58_amount = readr::parse_number(q58_amount)
   ) %>%
-  # ---- Encoding normalization (key fix) ----
+  # ---- Encoding normalization (key update here) ----
 mutate(
   across(any_of("q48_1_which_marz_city"), fix_double_utf8_mojibake),
   across(where(is.character), repair_arm),
@@ -352,10 +352,10 @@ module_vars <- list(
 )
 
 # ────────────────────────────────────────────────────────────────────────────
-# Friendly labels for Panel 5 (single-choice metrics)
+# Panel 5: Friendly labels (single-choice metrics)
 # ────────────────────────────────────────────────────────────────────────────
 mod5_friendly <- c(
-  # Q30: Which services did you ever need? (Yes/No)
+  # Q30: Service needs
   q30_healthcare_service        = "Needed healthcare services?",
   q30_food_assistance           = "Needed food assistance?",
   q30_childcare                 = "Needed childcare?",
@@ -366,31 +366,38 @@ mod5_friendly <- c(
   q30_household_goods           = "Needed household goods?",
   q30_clothing                  = "Needed clothing?",
   q30_financial_assistance      = "Needed financial assistance?",
-  # Q30 follow-ups on coverage/offering
-  q30_1_services_not_covered          = "Services needed but not covered?",
-  q30_1_services_not_covered_other    = "Other services not covered (specify)",
-  q30_2_services_not_offered          = "Services not offered at all?",
-  q30_2_services_not_offered_other    = "Other services not offered (specify)",
-  
-  # Q31–Q32: Social services
+  # Q30 follow-ups
+  q30_1_services_not_covered       = "Services needed but not covered?",
+  q30_1_services_not_covered_other = "Other services not covered (specify)",
+  q30_2_services_not_offered       = "Services not offered at all?",
+  q30_2_services_not_offered_other = "Other services not offered (specify)",
+  # Q31–Q32
   q31_need_social_services      = "Needed social services?",
   q32_get_social_services       = "Received social services?",
-  
-  # Q34–Q35: Mental health support
+  # Q34–Q35
   q34_need_mental_health        = "Needed mental health support?",
   q35_get_mental_health         = "Received mental health support?",
-  
-  # Q37–Q38: Legal support
+  # Q37–Q38
   q37_need_legal_support        = "Needed legal support?",
   q38_get_legal                 = "Received legal support?",
-  
-  # Q40–Q43: Doctor / pharmacy / meds
+  # Q40–Q43
   q40_need_doctor               = "Needed to see a doctor?",
   q41_go_doctor                 = "Went to a doctor?",
   q42_go_pharmacy               = "Went to a pharmacy instead?",
   q43_recommend_medic           = "Recommended to buy medicine?",
   q43_other_specify             = "Other medicine recommendation (specify)"
 )
+has_data_mod5 <- function(var) {
+  cands <- alias_map_mod5[[var]] %||% var
+  cands <- cands[cands %in% names(df_tcwp)]
+  if (!length(cands)) return(FALSE)
+  any(vapply(cands, function(nm) {
+    v <- df_tcwp[[nm]]
+    any(!(is.na(v) | as.character(v) == ""), na.rm = TRUE)
+  }, logical(1)))
+}
+mod5_vars_with_data <- names(mod5_friendly)[vapply(names(mod5_friendly), has_data_mod5, logical(1))]
+mod5_choices <- setNames(mod5_vars_with_data, unname(mod5_friendly[mod5_vars_with_data]))
 
 ## ────────────────────────────────────────────────────────────────────────────
 ## Panel 6: Intentions & Perspectives — label mappings
