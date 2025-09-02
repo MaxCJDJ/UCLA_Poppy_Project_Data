@@ -1808,20 +1808,15 @@ server <- function(input, output, session) {
              yaxis = list(title="Count"))
   })
   
-  # Panel 7: Socio-Economic Status —------------------------------------—-----
+  ## Panel 7: Socio-Economic Status ------------------------------------------
   
   output$tbl7 <- renderDT({
-    req(input$var7)
-    var <- input$var7
-    
+    req(input$var7); var <- input$var7
     if (var %in% c("q56_rooms", "q58_amount")) {
-      df_tcwp %>%
-        select(Value = .data[[var]]) %>%
-        filter(!is.na(Value)) %>%
+      df_tcwp %>% select(Value = .data[[var]]) %>% filter(!is.na(Value)) %>%
         datatable(options = list(pageLength = 10, autoWidth = TRUE))
     } else {
-      df_tcwp %>%
-        filter(!is.na(.data[[var]])) %>%
+      df_tcwp %>% filter(!is.na(.data[[var]])) %>%
         count(Value = .data[[var]], name = "Count") %>%
         arrange(desc(Count)) %>%
         datatable(options = list(pageLength = 10, autoWidth = TRUE))
@@ -1829,10 +1824,7 @@ server <- function(input, output, session) {
   })
   
   output$plt7 <- renderPlot({
-    req(input$var7)
-    var   <- input$var7
-    label <- mod7_friendly[[var]]
-    
+    req(input$var7); var <- input$var7; label <- mod7_friendly[[var]]
     if (var %in% c("q56_rooms", "q58_amount")) {
       ggplot(df_tcwp, aes(x = .data[[var]])) +
         geom_histogram(bins = 10, na.rm = TRUE) +
@@ -1850,49 +1842,34 @@ server <- function(input, output, session) {
     }
   })
   
+  ## Panel 8: Life Events & Trauma -------------------------------------------
   
-  ## Panel 8: Life Events & Trauma Scales ------------------------------------
-  
-  # A) Custom DT for whichever variable the user picks in var8
   output$tbl8 <- renderDT({
     req(input$var8)
-    var   <- input$var8
-    label <- mod8_friendly[[var]]
-    
-    df_tcwp %>%
-      # pull out the column, turn to character, label NA as "Missing"
-      mutate(
-        v = as.character(.data[[var]]),
-        v = tidyr::replace_na(v, "Missing")
-      ) %>%
-      count(v, name = "Count") %>%
-      rename(!!label := v) %>%
-      arrange(desc(Count)) %>%
-      datatable(
-        colnames = c(label, "Count"),
-        options  = list(pageLength = 10, autoWidth = TRUE)
-      )
+    var_in  <- input$var8
+    label   <- mod8_friendly[[var_in]] %||% var_in
+    var_col <- resolve_mod8_col(var_in, df = mod8_enriched())
+    mod8_enriched() |>
+      dplyr::transmute(v = as.character(.data[[var_col]])) |>
+      tidyr::replace_na(list(v = "Missing")) |>
+      dplyr::count(v, name = "Count") |>
+      dplyr::rename(!!label := v) |>
+      datatable(options = list(pageLength = 10, autoWidth = TRUE), 
+                rownames = FALSE)
   })
   
-  # B) Custom ggplot bar chart for the same variable
   output$plt8 <- renderPlot({
     req(input$var8)
-    var   <- input$var8
-    label <- mod8_friendly[[var]]
-    
-    df_tcwp %>%
-      mutate(
-        category = as.character(.data[[var]]),
-        category = tidyr::replace_na(category, "Missing")
-      ) %>%
-      count(category, name = "n") %>%
+    var_in  <- input$var8
+    label   <- mod8_friendly[[var_in]] %||% var_in
+    var_col <- resolve_mod8_col(var_in, df = mod8_enriched())
+    mod8_enriched() |>
+      dplyr::mutate(category = as.character(.data[[var_col]]),
+                    category = tidyr::replace_na(category, "Missing")) |>
+      dplyr::count(category, name = "n") |>
       ggplot(aes(x = category, y = n)) +
       geom_col() +
-      labs(
-        x     = label,
-        y     = "Count",
-        title = paste("Distribution of", label)
-      ) +
+      labs(x = label, y = "Count", title = paste("Distribution of", label)) +
       theme_minimal(base_size = 14) +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
   })
