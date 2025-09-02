@@ -5,7 +5,6 @@
 # Author:  Maxwell Chien 
 # Date:    2025-07-22
 # Date: Updates on 2025-09-01
-#
 # Description:
 #   This Shiny dashboard provides interactive visualizations of the
 #   Transcaucasian Community Wellbeing Project (TCWP) survey data. 
@@ -28,6 +27,14 @@
 #   1. Place the RDS file in the app directory
 #   2. Run `shiny::runApp()` from your R console
 # -----------------------------------------------------------------------------
+
+# Make sure everything we serialize to the browser is UTF-8
+options(encoding = "UTF-8")
+try(stringi::stri_enc_set("UTF-8"), silent = TRUE)
+if (.Platform$OS.type == "windows") {
+  suppressWarnings(try(Sys.setlocale("LC_CTYPE", "English_United States.utf8"), silent = TRUE))
+  suppressWarnings(try(Sys.setlocale("LC_ALL",   "English_United States.utf8"), silent = TRUE))
+}
 
 # 0. Libraries ----------------------------------------------------------------
 library(dplyr)           # for data manipulation (filter, mutate, summarize, etc.)
