@@ -1658,8 +1658,8 @@ server <- function(input, output, session) {
       return(plotly::plotly_empty(type = "scatter", mode = "markers") %>%
                layout(title = sprintf("Variable not found in this dataset: %s",
                                       label),
-                      xaxis = list(visible = FALSE), yaxis = list(visible = FALSE), 
-                      showlegend = FALSE))
+                      xaxis = list(visible = FALSE), 
+                      yaxis = list(visible = FALSE), showlegend = FALSE))
     }
     cnt <- df_tcwp %>% filter(!is.na(.data[[col]])) %>% count(answer = .data[[col]], name = "n")
     plot_ly(cnt, x = ~answer, y = ~n, type = "bar") %>%
@@ -1667,9 +1667,8 @@ server <- function(input, output, session) {
              yaxis = list(title = "Count"), margin = list(b = 100))
   })
   
-  ## Panel 6: Intentions & Perspectives —------------------------------------
+  ## Panel 6: Intentions & Perspectives --------------------------------------
   
-  # Q45: Why did you choose this community?
   output$mod6_choose_comm <- renderPlotly({
     df_tcwp %>%
       select(any_of(names(mod6_choose_labels))) %>%
@@ -1678,13 +1677,10 @@ server <- function(input, output, session) {
       count(code) %>%
       mutate(label = mod6_choose_labels[code]) %>%
       plot_ly(x=~label, y=~n, type="bar") %>%
-      layout(
-        xaxis = list(title="", tickangle = -45),
-        yaxis = list(title="Count")
-      )
+      layout(xaxis = list(title="", tickangle = -45), 
+             yaxis = list(title="Count"))
   })
   
-  # Q46: are you planning to leave?
   output$mod6_plan_leave <- renderPlotly({
     df_tcwp %>%
       filter(!is.na(q46_plan_leave_accom)) %>%
@@ -1693,7 +1689,6 @@ server <- function(input, output, session) {
       layout(xaxis = list(title = ""), yaxis = list(title = "Count"))
   })
   
-  # Q47: Reasons for planning to leave
   output$mod6_reasons_leave <- renderPlotly({
     df_tcwp %>%
       select(any_of(names(mod6_reasons_leave_labels))) %>%
@@ -1706,7 +1701,6 @@ server <- function(input, output, session) {
              yaxis = list(title="Count"))
   })
   
-  # Q48: stay vs. move
   output$mod6_stay_vs_move <- renderPlotly({
     df_tcwp %>%
       filter(!is.na(q48_plan_to_stay)) %>%
@@ -1715,16 +1709,52 @@ server <- function(input, output, session) {
       layout(xaxis = list(title = ""), yaxis = list(title = "Count"))
   })
   
-  # Q48.1: if staying, which Marz/City?
   output$mod6_stay_location <- renderPlotly({
-    df_tcwp %>%
-      filter(q48_plan_to_stay == "Stay in Armenia") %>%
-      count(q48_1_which_marz_city, name = "n") %>%
-      plot_ly(x = ~q48_1_which_marz_city, y = ~n, type = "bar") %>%
-      layout(xaxis = list(title = "Marz/City"), yaxis = list(title = "Count"))
+    stay_pat <- "(?i)stay|մնալ|մնամ|կմնամ"
+    raw <- df_tcwp %>%
+      mutate(plan = repair_arm(as.character(q48_plan_to_stay))) %>%
+      filter(stringr::str_detect(plan %||% "", stay_pat)) %>%
+      transmute(place = as.character(q48_1_which_marz_city))
+    if (!nrow(raw)) {
+      return(plotly::plotly_empty(type = "scatter", mode = "markers") %>%
+               layout(title = "No answers for “If staying, which Marz/City?”"))
+    }
+    df <- raw %>%
+      mutate(place = fix_double_utf8_mojibake(place)) %>%
+      mutate(place = repair_arm(place)) %>%
+      mutate(place = .rm_admin_words(place)) %>%
+      tidyr::separate_rows(place,
+                           sep = "\\s*[,;/\\|]+\\s*|\\s+և\\s+|\\s+եւ\\s+|\\s+and\\s+") %>%
+      mutate(place = stringr::str_squish(place)) %>%
+      filter(place != "") %>%
+      mutate(marz = to_marz(place)) %>%
+      mutate(marz = dplyr::coalesce(
+        marz,
+        dplyr::recode(place,
+                      "Երևան"="Yerevan","Երեւան"="Yerevan","Erevan"="Yerevan","Yerevan"="Yerevan",
+                      "Արարատ"="Ararat","Armavir"="Armavir","Արմավիր"="Armavir",
+                      "Արագածոտն"="Aragatsotn","Կոտայք"="Kotayk","Գեղարքունիք"="Gegharkunik",
+                      "Լոռի"="Lori","Շիրակ"="Shirak","Տավուշ"="Tavush",
+                      "Վայոց ձոր"="Vayots Dzor","Վայոց Ձոր"="Vayots Dzor","Սյունիք"="Syunik",
+                      .default = NA_character_)
+      ))
+    cnt <- df %>% mutate(marz = tidyr::replace_na(marz, "Other")) %>% count(marz, sort = TRUE)
+    df_top <- cnt %>%
+      mutate(label = ifelse(n <= 3 & marz != "Other", "Other (≤3)", marz)) %>%
+      group_by(label) %>% summarise(n = sum(n), .groups = "drop") %>%
+      arrange(n) %>% mutate(label = forcats::fct_reorder(label, n))
+    plot_ly(df_top, x = ~n, y = ~label, type = "bar", orientation = "h",
+            text = ~n, textposition = "outside",
+            hovertemplate = "%{y}<br>Count: %{x}<extra></extra>") %>%
+      layout(
+        xaxis = list(title = "Count"),
+        yaxis = list(title = "", tickfont = list(family = arm_font)),
+        font  = list(family = arm_font),
+        uniformtext = list(minsize = 10, mode = "hide"),
+        margin = list(l = 220, r = 24, t = 10, b = 24)
+      )
   })
   
-  # Q49: Reasons for moving elsewhere
   output$mod6_reasons_move <- renderPlotly({
     df_tcwp %>%
       select(any_of(names(mod6_reasons_move_labels))) %>%
@@ -1733,11 +1763,10 @@ server <- function(input, output, session) {
       count(code) %>%
       mutate(label = mod6_reasons_move_labels[code]) %>%
       plot_ly(x=~label, y=~n, type="bar") %>%
-      layout(xaxis = list(title="", tickangle = -45),
+      layout(xaxis = list(title="", tickangle = -45), 
              yaxis = list(title="Count"))
   })
   
-  # Q50: which country?
   output$mod6_dest_country <- renderPlotly({
     df_tcwp %>%
       filter(!is.na(q50_country_go)) %>%
@@ -1746,7 +1775,6 @@ server <- function(input, output, session) {
       layout(xaxis = list(title = "Country"), yaxis = list(title = "Count"))
   })
   
-  # Q51: Why that country?
   output$mod6_reasons_country <- renderPlotly({
     df_tcwp %>%
       select(any_of(names(mod6_reasons_country_labels))) %>%
@@ -1755,21 +1783,19 @@ server <- function(input, output, session) {
       count(code) %>%
       mutate(label = mod6_reasons_country_labels[code]) %>%
       plot_ly(x=~label, y=~n, type="bar") %>%
-      layout(xaxis = list(title="", tickangle = -45),
+      layout(xaxis = list(title="", tickangle = -45), 
              yaxis = list(title="Count"))
   })
   
-  # Q52: missing docs?
   output$mod6_missing_docs <- renderPlotly({
     df_tcwp %>%
       filter(!is.na(q52_missing_doc)) %>%
       count(q52_missing_doc, name = "n") %>%
       plot_ly(x = ~q52_missing_doc, y = ~n, type = "bar") %>%
-      layout(xaxis = list(title = "Missing documentation?"),
+      layout(xaxis = list(title = "Missing documentation?"), 
              yaxis = list(title = "Count"))
   })
   
-  # Q53: What type of documents are you missing?
   output$mod6_types_docs <- renderPlotly({
     df_tcwp %>%
       select(any_of(names(mod6_types_docs_labels))) %>%
@@ -1781,7 +1807,6 @@ server <- function(input, output, session) {
       layout(xaxis = list(title="", tickangle = -45),
              yaxis = list(title="Count"))
   })
-  
   
   # Panel 7: Socio-Economic Status —------------------------------------—-----
   
