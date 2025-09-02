@@ -32,8 +32,10 @@
 options(encoding = "UTF-8")
 try(stringi::stri_enc_set("UTF-8"), silent = TRUE)
 if (.Platform$OS.type == "windows") {
-  suppressWarnings(try(Sys.setlocale("LC_CTYPE", "English_United States.utf8"), silent = TRUE))
-  suppressWarnings(try(Sys.setlocale("LC_ALL",   "English_United States.utf8"), silent = TRUE))
+  suppressWarnings(try(Sys.setlocale("LC_CTYPE", "English_United States.utf8"),
+                       silent = TRUE))
+  suppressWarnings(try(Sys.setlocale("LC_ALL",   "English_United States.utf8"), 
+                       silent = TRUE))
 }
 
 # 0. Libraries ----------------------------------------------------------------
@@ -85,7 +87,8 @@ fix_arm_encoding <- function(x) {
   i <- which(usearm);    if (length(i)) out[i] <- tryarm[i]
   leftover <- !(ok | use1252 | usel1 | usedouble | usearm)
   i <- which(leftover)
-  if (length(i)) out[i] <- stringi::stri_enc_toutf8(out[i], is_unknown_8bit = TRUE)
+  if (length(i)) out[i] <- stringi::stri_enc_toutf8(out[i], 
+                                                    is_unknown_8bit = TRUE)
   Encoding(out) <- "UTF-8"
   out
 }
@@ -191,7 +194,8 @@ to_marz <- function(place) {
     colnames(hit_mat) <- names(.marz_rx)
   }
   any_hit <- rowSums(hit_mat) > 0L
-  first_idx <- apply(hit_mat, 1, function(row) { w <- which(row); if (length(w)) w[1] else NA_integer_ })
+  first_idx <- apply(hit_mat, 1, function(row) { w <- which(row);
+  if (length(w)) w[1] else NA_integer_ })
   marz_from_rx <- rep(NA_character_, length(p))
   marz_from_rx[any_hit] <- names(.marz_rx)[first_idx[any_hit]]
   base <- stringr::str_replace(p, "(?i)(ում|ից|ի)$", "")
@@ -215,7 +219,8 @@ normalize_region_artsakh <- function(x) {
     stringr::str_detect(xl, "^shushi")      ~ "Shushi",
     TRUE ~ NA_character_
   )
-  factor(out, levels = c("Stepanakert","Martuni","Martakert","Askeran","Hadrut","Shushi"))
+  factor(out, levels = c("Stepanakert","Martuni","Martakert","Askeran","
+                         Hadrut","Shushi"))
 }
 
 # Rebuild original UTF-8 from text like "Ã‰Ã¼..."
@@ -235,7 +240,8 @@ fix_double_utf8_mojibake <- function(v) {
 alias_map_mod5 <- list(
   q42_go_pharmacy     = c("q42_go_pharmacy", "INSTEAD_GO_PHARMACY"),
   q43_recommend_medic = c("q43_recommend_medic", "RECOMMENDED_BUY_MEDICINE"),
-  q43_other_specify   = c("q43_other_specify",  "RECOMMENDED_BUY_MEDICINE_OTHER")
+  q43_other_specify   = c("q43_other_specify", 
+                          "RECOMMENDED_BUY_MEDICINE_OTHER")
 )
 
 # This helps me resolve canonical var to the first matching existing column in df_tcwp
@@ -348,7 +354,8 @@ module_vars <- list(
     "q62_", "q63_", "q64_"
   )),
   `8` = pick_vars(c("q65_", "q66_", "q68_", "q69_")),
-  `9` = pick_vars(c("q81_", "q82_", "q83_", "q84_", "q85_", "q86_", "q87_", "q88_", "q89_", "q90_", "q91_", "q92_", "q93_", "q94_"))
+  `9` = pick_vars(c("q81_", "q82_", "q83_", "q84_", "q85_", "q86_", "q87_", 
+                    "q88_", "q89_", "q90_", "q91_", "q92_", "q93_", "q94_"))
 )
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -396,8 +403,10 @@ has_data_mod5 <- function(var) {
     any(!(is.na(v) | as.character(v) == ""), na.rm = TRUE)
   }, logical(1)))
 }
-mod5_vars_with_data <- names(mod5_friendly)[vapply(names(mod5_friendly), has_data_mod5, logical(1))]
-mod5_choices <- setNames(mod5_vars_with_data, unname(mod5_friendly[mod5_vars_with_data]))
+mod5_vars_with_data <- names(mod5_friendly)[vapply(names(mod5_friendly), 
+                                                   has_data_mod5, logical(1))]
+mod5_choices <- setNames(mod5_vars_with_data, 
+                         unname(mod5_friendly[mod5_vars_with_data]))
 
 ## ────────────────────────────────────────────────────────────────────────────
 ## Panel 6: Intentions & Perspectives — label mappings
@@ -534,7 +543,8 @@ mod8_friendly <- c(
 
 # Alias the known typo so selection works
 alias_map_mod8 <- list(
-  q71_20_troube_falling_asleep = c("q71_20_troube_falling_asleep", "q71_20_trouble_falling_asleep")
+  q71_20_troube_falling_asleep = c("q71_20_troube_falling_asleep",
+                                   "q71_20_trouble_falling_asleep")
 )
 resolve_mod8_col <- function(var, df = df_tcwp) {
   if (grepl("^at_least_\\d+$", var)) return(var)
@@ -544,7 +554,8 @@ resolve_mod8_col <- function(var, df = df_tcwp) {
 }
 mod8_enriched <- shiny::reactive({
   df <- df_tcwp
-  total_col <- grep("^q71_.*(total|sum|score)$", names(df), value = TRUE, ignore.case = TRUE)
+  total_col <- grep("^q71_.*(total|sum|score)$", names(df), value = TRUE, 
+                    ignore.case = TRUE)
   if (length(total_col)) {
     total <- suppressWarnings(as.numeric(df[[ total_col[[1]] ]]))
   } else {
@@ -562,7 +573,8 @@ mod8_enriched <- shiny::reactive({
     }
   }
   if (!"q71_total" %in% names(df)) df$q71_total <- total
-  mk <- function(cut) ifelse(is.na(total), NA_character_, ifelse(total >= cut, "Yes", "No"))
+  mk <- function(cut) ifelse(is.na(total), NA_character_, 
+                             ifelse(total >= cut, "Yes", "No"))
   df$at_least_20 <- mk(20)
   df$at_least_19 <- mk(19)
   df$at_least_18 <- mk(18)
@@ -654,440 +666,329 @@ if ("q48_1_which_marz_city_new" %in% names(df_tcwp)) {
 
 # 4. UI ----------------------------------------------------------------------
 ui <- dashboardPage(
-  dashboardHeader(title = tagList(icon("chart-bar"), "TCWP Survey Explorer")),
-  
+  skin = "purple",
+  dashboardHeader(title = tagList(icon("bar-chart"), "TCWP Survey Explorer")),
   dashboardSidebar(
     sidebarMenu(
-      menuItem("1. Admin & Demographic",       tabName = "admin", 
+      id = "tabs",
+      menuItem("1. Admin & Demographic",        tabName = "admin", 
                icon = icon("users")),
-      menuItem("2. Pre-Displacement & Emp.",    tabName = "mod2",
+      menuItem("2. Pre-Displacement & Emp.",    tabName = "mod2",  
                icon = icon("truck")),
-      menuItem("3. Household Composition",      tabName = "mod3",
+      menuItem("3. Household Composition",      tabName = "mod3",  
                icon = icon("home")),
-      menuItem("4. Population Movement",        tabName = "mod4",
-               icon = icon("map-marked-alt")),
-      menuItem("5. Access & Utilization of Svcs", tabName = "mod5",
-               icon = icon("hands-helping")),
-      menuItem("6. Intentions & Perspectives",  tabName = "mod6",
-               icon = icon("lightbulb")),
-      menuItem("7. Socio-Economic Status",      tabName = "mod7",
-               icon = icon("chart-line")),
-      menuItem("8. Life Events & Trauma",       tabName = "mod8",
+      menuItem("4. Population Movement",        tabName = "mod4",  
+               icon = icon("map")),
+      menuItem("5. Access & Utilization of Svcs", tabName = "mod5", 
+               icon = icon("handshake-o")),
+      menuItem("6. Intentions & Perspectives",  tabName = "mod6", 
+               icon = icon("lightbulb-o")),
+      menuItem("7. Socio-Economic Status",      tabName = "mod7", 
+               icon = icon("line-chart")),
+      menuItem("8. Life Events & Trauma",       tabName = "mod8",  
                icon = icon("heartbeat")),
-      menuItem("9. Health Behaviors & QoL",     tabName = "mod9",
+      menuItem("9. Health Behaviors & QoL",     tabName = "mod9", 
                icon = icon("stethoscope"))
     )
   ),
-  
   dashboardBody(
-    # need to ensure consistent valueBox height
-    tags$head(tags$style(HTML(".small-box {height: 120px !important;}"))),
-    
+    tags$head(
+      tags$meta(charset = "utf-8"),
+      tags$link(rel = "preconnect", href = "https://fonts.googleapis.com"),
+      tags$link(rel = "preconnect", href = "https://fonts.gstatic.com", crossorigin = "anonymous"),
+      tags$link(
+        href = "https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;600&display=swap",
+        rel  = "stylesheet"
+      ),
+      tags$style(HTML("
+    .small-box { height: 120px !important; }
+    .content-wrapper, .plotly, .js-plotly-plot * {
+      font-family: 'Noto Sans Armenian','Noto Sans','DejaVu Sans',sans-serif !important;
+    }
+    .box { border-radius: 12px; }
+    .box .box-title { font-weight: 600; }
+    .sidebar-menu .treeview-menu>li>a { white-space: normal; }
+  "))
+    ),
     tabItems(
-      
-      # Panel 1: Administrative & Demographic --------------------------------
+      # Panel 1
       tabItem(tabName = "admin",
-              
-              ## Q3, Q4, Q6 valueBoxes only
               fluidRow(
-                valueBoxOutput("vb_households",   width = 4),  # Q3
-                valueBoxOutput("vb_participants", width = 4),  # Q4
-                valueBoxOutput("vb_main_resp",    width = 4)   # Q6
+                valueBoxOutput("vb_households",   width = 4),
+                valueBoxOutput("vb_participants", width = 4),
+                valueBoxOutput("vb_main_resp",    width = 4)
               ),
-              
-              ## Q9.b / Q10 histograms
               fluidRow(
-                box(
-                  title = "Q9.b Age Distribution",
-                  status = "primary", solidHeader = TRUE,
-                  width = 6, plotlyOutput("age_dist",    height = "250px")
-                ),
-                box(
-                  title = "Q10 Gender Breakdown",
-                  status = "primary", solidHeader = TRUE,
-                  width = 6, plotlyOutput("gender_bar",  height = "250px")
-                )
+                valueBoxOutput("vb_age_median",    width = 6),
+                valueBoxOutput("vb_hhsize_median", width = 6)
               ),
-              
-              ## Q11 / Q7 map
               fluidRow(
-                box(
-                  title = "Q11 Nationality Breakdown",
-                  status = "primary", solidHeader = TRUE,
-                  width = 6, plotlyOutput("nat_bar",    height = "250px")
-                ),
-                box(
-                  title = "Q7 Current Marz (map)",
-                  status = "primary", solidHeader = TRUE,
-                  width = 6, leafletOutput("map1",      height = "250px")
-                )
+                box(title = "Q22 Household Size (Current)", status = "primary",
+                    solidHeader = TRUE, width = 6, 
+                    plotlyOutput("hh_size_overview", height = "250px")),
+                box(title = "Q10 Gender Breakdown", status = "primary",
+                    solidHeader = TRUE, width = 6, 
+                    plotlyOutput("gender_bar",  height = "250px")),
+                box(title = "Q9.b Age Distribution (Median & IQR)", status = "primary",
+                    solidHeader = TRUE, width = 6, 
+                    plotlyOutput("age_dist_overview", height = "250px")),
+                box(title = "Age Pyramid by Gender (5-year bands)", status = "primary",
+                    solidHeader = TRUE, width = 6, 
+                    plotlyOutput("age_pyramid", height = "250px"))
+              ),
+              fluidRow(
+                box(title = "Q11 Nationality Breakdown", status = "primary",
+                    solidHeader = TRUE, width = 6, 
+                    plotlyOutput("nat_bar", height = "250px")),
+                box(title = "Q7 Current Marz (map)", status = "primary",
+                    solidHeader = TRUE, width = 6, 
+                    leafletOutput("map1", height = "250px"))
               )
-              
       ),
-      
-      # Panel 2: Pre-Displacement & Employment --------------------------------
-      tabItem(
-        tabName = "mod2",
-        
-        # 2a) snapshot valueBoxes
-        fluidRow(
-          valueBoxOutput("vb_emp_before", width=4),
-          valueBoxOutput("vb_emp_after",  width=4),
-          valueBoxOutput("vb_emp_current",width=4)
-        ),
-        
-        # 2b) employment status over time + occupation details
-        fluidRow(
-          box(
-            title = "Employment % by Stage",
-            status = "primary", solidHeader = TRUE, width = 6,
-            plotlyOutput("emp_status_plot", height = "300px")
-          ),
-          box(
-            title = "Occupations (Pre-Displacement)",
-            status = "primary", solidHeader = TRUE, width = 6,
-            DTOutput("emp_occ_tbl")
-          )
-        ),
-        
-        # 2c) aggregated reasons for mistrust
-        fluidRow(
-          box(
-            title = "Reasons for Distrust (all check-all)",
-            status = "warning", solidHeader = TRUE, width = 12,
-            plotlyOutput("mistrust_reasons", height = "350px")
-          )
-        ),
-        
-        fluidRow(
-          box(
-            title = "Barriers to Finding Work (Q21)",
-            status = "danger", solidHeader = TRUE, width = 12,
-            plotlyOutput("barriers_work", height = "300px")
-          )
-        ),
-        
-        # 2d) generic selector → table + plot
-        fluidRow(
-          box(
-            title = "Explore any metric",
-            status = "success", solidHeader = TRUE, width = 4,
-            selectInput(
-              "var2", "Metric:", 
-              choices  = mod2_choices,    
-              selected = mod2_choices[[1]]    
-            )
-          ),
-          box(
-            title = "Count Table",
-            status = "info", solidHeader = TRUE, width = 8,
-            DTOutput("tbl2")
-          )
-        ),
-        fluidRow(
-          box(
-            title = "Distribution Plot",
-            status = "info", solidHeader = TRUE, width = 12,
-            plotOutput("plt2", height = "350px")
-          )
-        )
-      ),
-      
-      ## Panel 3: Household Composition --------------------------------
-      
-      tabItem(
-        tabName = "mod3",
-        
-        ## A) Household size
-        fluidRow(
-          box(
-            title = "Household Size", status = "warning", solidHeader = TRUE,
-            width = 4,
-            selectInput(
-              "hh_size_var", "Which size?",
-              # take the first two module_vars[["3"]] entries (Q22 & Q23 totals)
-              choices = setNames(
-                module_vars[["3"]][1:2],
-                c("Current household size (Q22)", "Before displacement (Q23)")
+      # Panel 2
+      tabItem(tabName = "mod2",
+              fluidRow(
+                valueBoxOutput("vb_emp_before",  width = 4),
+                valueBoxOutput("vb_emp_after",   width = 4),
+                valueBoxOutput("vb_emp_current", width = 4)
               ),
-              selected = module_vars[["3"]][1]
-            )
-          ),
-          box(
-            title = "Size distribution", status = "info", solidHeader = TRUE,
-            width = 8,
-            plotlyOutput("hh_size_plot", height = "300px")
-          )
-        ),
-        
-        ## B) Member‐level characteristics
-        fluidRow(
-          box(
-            title = "Member characteristic", status = "warning",
-            solidHeader = TRUE, width = 4,
-            selectInput(
-              "member_var", "Pick a question:",
-              choices = c(
-                "Year of birth (Q23.2)"             = "year_birth",
-                "Gender (Q23.3)"                    = "gender",
-                "Relation to respondent (Q23.4)"    = "relation_respondent",
-                "Current status (alive/dead) (Q23.5)" = "current_health_status",
-                "Lives with respondent? (Q23.6)"    = "living_with_respond",
-                "Employment status (Q23.7)"         = "employment"
+              fluidRow(
+                box(title = "Employment % by Stage", 
+                    status = "primary", solidHeader = TRUE, width = 6,
+                    plotlyOutput("emp_status_plot", height = "300px")),
+                box(title = "Occupations (Pre-Displacement)", 
+                    status = "primary", solidHeader = TRUE, width = 6,
+                    DTOutput("emp_occ_tbl"))
               ),
-              selected = "gender"
-            )
-          ),
-          box(
-            title = textOutput("member_title"), status = "info",
-            solidHeader = TRUE, width = 8,
-            plotlyOutput("member_plot", height = "300px")
-          )
-        )
+              fluidRow(
+                box(title = "Reasons for Distrust (all check-all)", 
+                    status = "warning",
+                    solidHeader = TRUE, width = 12, 
+                    plotlyOutput("mistrust_reasons", height = "350px"))
+              ),
+              fluidRow(
+                box(title = "Barriers to Finding Work (Q21)", status = "danger",
+                    solidHeader = TRUE, width = 12, 
+                    plotlyOutput("barriers_work", height = "300px"))
+              ),
+              fluidRow(
+                box(title = "Explore any metric", status = "success", 
+                    solidHeader = TRUE, width = 4,
+                    selectInput("var2", "Metric:", choices = mod2_choices, 
+                                selected = mod2_choices[[1]])),
+                box(title = "Count Table", status = "info", solidHeader = TRUE,
+                    width = 8, DTOutput("tbl2"))
+              ),
+              fluidRow(
+                box(title = "Distribution Plot", status = "info",
+                    solidHeader = TRUE, width = 12,
+                    plotOutput("plt2", height = "350px"))
+              )
       ),
-      
-      ## Panel 4: Population Movement — UI --------------------------------
-
-      tabItem(
-        tabName = "mod4",
-        
-        ## A) Region before / after
-        fluidRow(
-          box(
-            title = "Region before the 44-day war", status = "primary",
-            solidHeader = TRUE,
-            width = 6, plotlyOutput("mod4_before_plot", height = "300px")
-          ),
-          box(
-            title = "Region moved from (Sep 2023)", status = "primary",
-            solidHeader = TRUE,
-            width = 6, plotlyOutput("mod4_after_plot",  height = "300px")
-          )
-        ),
-        
-        ## B) # moves + stats
-        fluidRow(
-          box(
-            title = "# of moves since Sep 19, 2023", status = "info",
-            solidHeader = TRUE,
-            width = 6,
-            plotlyOutput("mod4_nmoves_hist",   height = "300px"),
-            verbatimTextOutput("mod4_nmoves_stats")
-          ),
-        )
+      # Panel 3
+      tabItem(tabName = "mod3",
+              fluidRow(
+                box(title = "Household Size", status = "warning",
+                    solidHeader = TRUE, width = 4,
+                    selectInput("hh_size_var", "Which size?",
+                                choices = setNames(module_vars[["3"]][1:2],
+                                                   c("Current household size (Q22)", "Before displacement (Q23)")),
+                                selected = module_vars[["3"]][1])),
+                box(title = "Size distribution", status = "info", 
+                    solidHeader = TRUE, width = 8,
+                    plotlyOutput("hh_size_plot", height = "300px"))
+              ),
+              fluidRow(
+                box(title = "Member characteristic", status = "warning",
+                    solidHeader = TRUE, width = 4,
+                    selectInput("member_var", "Pick a question:", choices = c(
+                      "Year of birth (Q23.2)"="year_birth",
+                      "Gender (Q23.3)"="gender",
+                      "Relation to respondent (Q23.4)"="relation_respondent",
+                      "Current status (alive/dead) (Q23.5)"="current_health_status",
+                      "Lives with respondent? (Q23.6)"="living_with_respond",
+                      "Employment status (Q23.7)"="employment"
+                    ), selected = "gender")),
+                box(title = textOutput("member_title"), status = "info",
+                    solidHeader = TRUE, width = 8, 
+                    plotlyOutput("member_plot", height = "300px"))
+              )
       ),
-      
-      # Panel 5: Access & Utilization of Services ----------------------------
-      tabItem(
-        tabName = "mod5",
-        fluidRow(
-          box(
-            title = "Single‐Choice Metrics",
-            status = "warning", solidHeader = TRUE, width = 4,
-            selectInput(
-              "var5", "Variable:", 
-              choices  = setNames(names(mod5_friendly), mod5_friendly),
-              selected = names(mod5_friendly)[1]
-            )
-          ),
-          box(
-            title = "Count Table",
-            status = "info", solidHeader = TRUE, width = 8,
-            DTOutput("tbl5")
-          )
-        ),
-        fluidRow(
-          box(
-            title = "Distribution Plot",
-            status = "info", solidHeader = TRUE, width = 12,
-            plotlyOutput("plt5", height = "350px")
-          )
-        ),
-        # now I want to dedicate one row for each reasons‐type question
-        fluidRow(
-          box(
-            title = "Reasons for Not Getting Social Services (Q33)",
-            status = "danger", solidHeader = TRUE, width = 6,
-            plotlyOutput("reasons_social")
-          ),
-          box(
-            title = "Reasons for Not Getting Mental Health Support (Q36)",
-            status = "danger", solidHeader = TRUE, width = 6,
-            plotlyOutput("reasons_mental")
-          )
-        ),
-        fluidRow(
-          box(
-            title = "Reasons for Not Getting Legal Support (Q39)",
-            status = "danger", solidHeader = TRUE, width = 6,
-            plotlyOutput("reasons_legal")
-          ),
-          box(
-            title = "Reasons for Not Going to a Doctor (Q44)",
-            status = "danger", solidHeader = TRUE, width = 6,
-            plotlyOutput("reasons_doctor")
-          )
-        )
+      # Panel 4
+      tabItem(tabName = "mod4",
+              fluidRow(
+                box(title = "Display options", status = "warning",
+                    solidHeader = TRUE, width = 12,
+                    checkboxInput("mod4_keep_na",
+                                  "Include '(Missing/NA)' & '[prefer not to answer]' in charts",
+                                  value = FALSE),
+                    selectInput("mod4_sort", "Sort bars by",
+                                choices = c("Count (descending)"="count_desc",
+                                            "Alphabetical (A→Z)"="alpha"),
+                                selected = "count_desc"),
+                    numericInput("mod4_min_flow",
+                                 "Minimum flow size for Sankey (count)", 
+                                 value = 2, min = 1, step = 1))
+              ),
+              fluidRow(
+                box(title = "Region before the 44-day war", status = "primary",
+                    solidHeader = TRUE, width = 6, 
+                    plotlyOutput("mod4_before_plot", height = "300px")),
+                box(title = "Region moved from (Sep 2023)", status = "primary",
+                    solidHeader = TRUE, width = 6, 
+                    plotlyOutput("mod4_after_plot",  height = "300px"))
+              ),
+              fluidRow(
+                box(title = "# of moves since Sep 19, 2023", status = "info",
+                    solidHeader = TRUE, width = 8, 
+                    plotlyOutput("mod4_nmoves_hist", height = "300px"),
+                    verbatimTextOutput("mod4_nmoves_stats")),
+                box(title = "Notes", status = "info", solidHeader = TRUE, width = 4,
+                    helpText("• Region names are normalized (e.g., remove '(specify...)')."),
+                    helpText("• Toggle the checkbox above to include missing/'prefer not to answer'."),
+                    helpText("• Use 'Minimum flow size' to filter tiny flows in the Sankey."))
+              ),
+              fluidRow(
+                box(title = "Flows: Region before → Region moved from (Sep 2023)",
+                    status = "info",
+                    solidHeader = TRUE, width = 8,
+                    plotlyOutput("mod4_flow", height = "380px")),
+                box(title = "Top flows (pairs)", status = "info", 
+                    solidHeader = TRUE, width = 4, DTOutput("mod4_flow_tbl"))
+              )
       ),
-      
-      # Panel 6: Intentions & Perspectives -----------------------------------
+      # Panel 5
+      tabItem(tabName = "mod5",
+              fluidRow(
+                box(title = "Single‐Choice Metrics", status = "warning", 
+                    solidHeader = TRUE, width = 4,
+                    selectInput("var5", "Variable:", choices = mod5_choices, 
+                                selected = names(mod5_choices)[1])),
+                box(title = "Count Table", status = "info", solidHeader = TRUE,
+                    width = 8, DTOutput("tbl5"))
+              ),
+              fluidRow(
+                box(title = "Distribution Plot", status = "info", 
+                    solidHeader = TRUE, width = 12,
+                    plotlyOutput("plt5", height = "350px"))
+              ),
+              fluidRow(
+                box(title = "Reasons for Not Getting Social Services (Q33)",
+                    status = "danger",
+                    solidHeader = TRUE, width = 6, plotlyOutput("reasons_social")),
+                box(title = "Reasons for Not Getting Mental Health Support (Q36)", 
+                    status = "danger",
+                    solidHeader = TRUE, width = 6, plotlyOutput("reasons_mental"))
+              ),
+              fluidRow(
+                box(title = "Reasons for Not Getting Legal Support (Q39)", 
+                    status = "danger",
+                    solidHeader = TRUE, width = 6, plotlyOutput("reasons_legal")),
+                box(title = "Reasons for Not Going to a Doctor (Q44)",
+                    status = "danger",
+                    solidHeader = TRUE, width = 6, plotlyOutput("reasons_doctor"))
+              )
+      ),
+      # Panel 6
       tabItem(tabName = "mod6",
-              
-              ## Q45: Why choose this community?
               fluidRow(
-                box(
-                  title = "Why did you/your family choose this community?",
-                  status = "primary", solidHeader = TRUE, width = 6,
-                  plotlyOutput("mod6_choose_comm", height = "300px")
-                ),
-                
-                ## Q46: Planning to leave current accommodation?
-                box(
-                  title = "Are you planning to leave your current accommodation?",
-                  status = "primary", solidHeader = TRUE, width = 6,
-                  plotlyOutput("mod6_plan_leave", height = "300px")
-                )
+                box(title = "Why did you/your family choose this community?",
+                    status = "primary",
+                    solidHeader = TRUE, width = 6, plotlyOutput("mod6_choose_comm",
+                                                                height = "300px")),
+                box(title = "Are you planning to leave your current accommodation?",
+                    status = "primary",
+                    solidHeader = TRUE, width = 6, plotlyOutput("mod6_plan_leave", 
+                                                                height = "300px"))
               ),
-              
-              ## Q47: Reasons for planning to leave
               fluidRow(
-                box(
-                  title = "If so, why are you planning to leave?",
-                  status = "warning", solidHeader = TRUE, width = 12,
-                  plotlyOutput("mod6_reasons_leave", height = "300px")
-                )
+                box(title = "If so, why are you planning to leave?", 
+                    status = "warning",
+                    solidHeader = TRUE, width = 12, 
+                    plotlyOutput("mod6_reasons_leave", height = "300px"))
               ),
-              
-              ## Q48 + follow-up Q48.1
               fluidRow(
-                box(
-                  title = "Within the next 6 months, stay in Armenia or move?",
-                  status = "info", solidHeader = TRUE, width = 6,
-                  plotlyOutput("mod6_stay_vs_move", height = "300px")
-                ),
-                box(
-                  title = "If staying, which Marz/City?",
-                  status = "info", solidHeader = TRUE, width = 6,
-                  plotlyOutput("mod6_stay_location", height = "300px")
-                )
+                box(title = "Within the next 6 months, stay in Armenia or move?",
+                    status = "info",
+                    solidHeader = TRUE, width = 6, 
+                    plotlyOutput("mod6_stay_vs_move", height = "300px")),
+                box(title = "If staying, which Marz/City?", status = "info",
+                    solidHeader = TRUE, width = 6, 
+                    plotlyOutput("mod6_stay_location", height = "300px"))
               ),
-              
-              ## Q49: Reasons for moving
               fluidRow(
-                box(
-                  title = "Why are you planning to move somewhere else?",
-                  status = "danger", solidHeader = TRUE, width = 12,
-                  plotlyOutput("mod6_reasons_move", height = "300px")
-                )
+                box(title = "Why are you planning to move somewhere else?", 
+                    status = "danger",
+                    solidHeader = TRUE, width = 12,
+                    plotlyOutput("mod6_reasons_move", height = "300px"))
               ),
-              
-              ## Q50 + Q51
               fluidRow(
-                box(
-                  title = "Which country are you planning to go to?",
-                  status = "success", solidHeader = TRUE, width = 6,
-                  plotlyOutput("mod6_dest_country", height = "300px")
-                ),
-                box(
-                  title = "Why that country?",
-                  status = "success", solidHeader = TRUE, width = 6,
-                  plotlyOutput("mod6_reasons_country", height = "300px")
-                )
+                box(title = "Which country are you planning to go to?", 
+                    status = "success",
+                    solidHeader = TRUE, width = 6, 
+                    plotlyOutput("mod6_dest_country", height = "300px")),
+                box(title = "Why that country?", status = "success",
+                    solidHeader = TRUE, width = 6, 
+                    plotlyOutput("mod6_reasons_country", height = "300px"))
               ),
-              
-              ## Q52 + Q53 (fixed statuses)
               fluidRow(
-                box(
-                  title = "Are you missing official documentation?",
-                  status = "info",         
-                  solidHeader = TRUE, width = 6,
-                  plotlyOutput("mod6_missing_docs", height = "300px")
-                ),
-                box(
-                  title = "What type of documents are you missing?",
-                  status = "info",        
-                  solidHeader = TRUE, width = 6,
-                  plotlyOutput("mod6_types_docs", height = "300px")
-                )
+                box(title = "Are you missing official documentation?",
+                    status = "info",
+                    solidHeader = TRUE, width = 6, 
+                    plotlyOutput("mod6_missing_docs", height = "300px")),
+                box(title = "What type of documents are you missing?", 
+                    status = "info",
+                    solidHeader = TRUE, width = 6,
+                    plotlyOutput("mod6_types_docs", height = "300px"))
               )
-              
       ),
-      
-      # Panel 7: Socio-Economic Status ---------------------------------------
+      # Panel 7
       tabItem(tabName = "mod7",
               fluidRow(
-                box(
-                  title = "Controls", status = "warning", solidHeader = TRUE,
-                  width = 3,
-                  selectInput(
-                    "var7", "Metric:",
-                    choices  = mod7_choices,
-                    selected = names(mod7_choices)[1]
-                  )
-                ),
-                box(
-                  title = "Table", status = "info", solidHeader = TRUE,
-                  width = 9,
-                  DTOutput("tbl7")
-                )
+                box(title = "Controls", status = "warning", solidHeader = TRUE,
+                    width = 3,
+                    selectInput("var7", "Metric:", choices = mod7_choices, 
+                                selected = names(mod7_choices)[1])),
+                box(title = "Table", status = "info", solidHeader = TRUE, 
+                    width = 9, DTOutput("tbl7"))
               ),
               fluidRow(
-                box(
-                  title = "Distribution Plot", status = "info",
-                  solidHeader = TRUE, width = 12,
-                  plotOutput("plt7", height = "350px")
-                )
+                box(title = "Distribution Plot", status = "info", 
+                    solidHeader = TRUE, width = 12,
+                    plotOutput("plt7", height = "350px"))
               )
       ),
-      
-      # Panel 8: Life Events & Trauma Scales ---------------------------------
+      # Panel 8
       tabItem(tabName = "mod8",
               fluidRow(
-                box(title="Controls", status="warning", solidHeader=TRUE,
-                    width=3,
-                    selectInput("var8", "Variable:", 
-                                choices = mod8_choices, 
-                                selected = names(mod8_choices)[1])
-                    
-                ),
-                box(title="Table", status="info", solidHeader=TRUE, width=9,
-                    DTOutput("tbl8")
-                )
+                box(title = "Controls", status = "warning", 
+                    solidHeader = TRUE, width = 3,
+                    selectInput("var8", "Variable:", choices = mod8_choices,
+                                selected = names(mod8_choices)[1])),
+                box(title = "Table", status = "info", solidHeader = TRUE,
+                    width = 9, DTOutput("tbl8"))
               ),
               fluidRow(
-                box(title="Distribution Plot", status="info", solidHeader=TRUE,
-                    width=12,
-                    plotOutput("plt8", height="350px")
-                )
+                box(title = "Distribution Plot", status = "info", 
+                    solidHeader = TRUE, width = 12,
+                    plotOutput("plt8", height = "350px"))
               )
       ),
-      
-      # Panel 9: Health Behaviors & Quality of Life --------------------------
-      tabItem(
-        tabName = "mod9",
-        fluidRow(
-          box(
-            title = "Select question", status = "warning", solidHeader = TRUE,
-            width = 3,
-            selectInput(
-              "var9", "Question:",
-              choices  = mod9_choices,
-              selected = names(mod9_choices)[1]
-            )
-          ),
-          box(
-            title = "Count table", status = "info", solidHeader = TRUE,
-            width = 9,
-            DTOutput("tbl9")
-          )
-        ),
-        fluidRow(
-          box(
-            title = "Distribution / Pivot plot", status = "info",
-            solidHeader = TRUE, width = 12,
-            plotOutput("plt9", height = "350px")
-          )
-        )
+      # Panel 9
+      tabItem(tabName = "mod9",
+              fluidRow(
+                box(title = "Select question", status = "warning", 
+                    solidHeader = TRUE, width = 3,
+                    selectInput("var9", "Question:", choices = mod9_choices, 
+                                selected = names(mod9_choices)[1])),
+                box(title = "Count table", status = "info", solidHeader = TRUE,
+                    width = 9, DTOutput("tbl9"))
+              ),
+              fluidRow(
+                box(title = "Distribution / Pivot plot", status = "info",
+                    solidHeader = TRUE, width = 12, 
+                    plotOutput("plt9", height = "350px"))
+              )
       )
     )
   )
