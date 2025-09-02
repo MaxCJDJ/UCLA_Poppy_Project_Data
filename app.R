@@ -56,6 +56,195 @@ library(tibble)          # tibble()
 
 arm_font <- "Noto Sans Armenian"  # used where Armenian text may appear
 
+# 0a. Tiny utility ------------------------------------------------------------
+`%||%` <- function(x, y) if (!is.null(x)) x else y
+
+# Try to fix UTF-8 text that was mis-read as latin1/Windows-1252
+fix_arm_encoding <- function(x) {
+  x <- as.character(x)
+  has_arm <- function(v) {
+    v <- as.character(v); v[is.na(v)] <- ""
+    nzchar(v) & stringr::str_detect(v, "[\\u0530-\\u058F]")
+  }
+  ok <- has_arm(x)
+  try1252  <- suppressWarnings(iconv(x, from = "windows-1252", to = "UTF-8"))
+  use1252  <- (!ok) & has_arm(try1252)
+  tryl1    <- suppressWarnings(iconv(x, from = "latin1", to = "UTF-8"))
+  usel1    <- (!ok) & (!use1252) & has_arm(tryl1)
+  trydouble <- suppressWarnings(iconv(
+    iconv(x, from = "UTF-8", to = "windows-1252", sub = "byte"),
+    from = "windows-1252", to = "UTF-8"
+  ))
+  usedouble <- (!ok) & (!use1252) & (!usel1) & has_arm(trydouble)
+  tryarm   <- suppressWarnings(iconv(x, from = "ARMSCII-8", to = "UTF-8"))
+  usearm   <- (!ok) & (!use1252) & (!usel1) & (!usedouble) & has_arm(tryarm)
+  out <- x
+  i <- which(use1252);   if (length(i)) out[i] <- try1252[i]
+  i <- which(usel1);     if (length(i)) out[i] <- tryl1[i]
+  i <- which(usedouble); if (length(i)) out[i] <- trydouble[i]
+  i <- which(usearm);    if (length(i)) out[i] <- tryarm[i]
+  leftover <- !(ok | use1252 | usel1 | usedouble | usearm)
+  i <- which(leftover)
+  if (length(i)) out[i] <- stringi::stri_enc_toutf8(out[i], is_unknown_8bit = TRUE)
+  Encoding(out) <- "UTF-8"
+  out
+}
+
+# Reinterpret Latin-1/CP1252 mojibake as UTF-8 (e.g., "Ô±Ö€..." → Armenian)
+fix_utf8_mojibake <- function(x) {
+  x <- as.character(x)
+  is_arm <- stringr::str_detect(x, "[\\u0530-\\u058F]")
+  looks_8bit <- stringr::str_detect(x, "[\\u00A0-\\u00FF]")
+  y <- x
+  bad <- !is_arm & looks_8bit & !is.na(x)
+  if (any(bad)) {
+    Encoding(y[bad]) <- "latin1"
+    y[bad] <- enc2utf8(y[bad])
+  }
+  stringi::stri_enc_toutf8(y, is_unknown_8bit = TRUE)
+}
+
+# One robust Armenian text normalizer
+repair_arm <- function(x) {
+  x <- as.character(x)
+  a1 <- fix_utf8_mojibake(x); a2 <- fix_arm_encoding(a1)
+  a2 <- stringi::stri_enc_toutf8(a2, is_unknown_8bit = TRUE)
+  b1 <- fix_arm_encoding(x);   b2 <- fix_utf8_mojibake(b1)
+  b2 <- stringi::stri_enc_toutf8(b2, is_unknown_8bit = TRUE)
+  has_arm <- function(v) stringr::str_detect(v %||% "", "[\\u0530-\\u058F]")
+  out <- ifelse(has_arm(a2) | is.na(a2) | a2 == "", a2, b2)
+  out <- stringr::str_squish(out); Encoding(out) <- "UTF-8"; out
+}
+
+# Armenian admin words (marz/city/village) + common case endings
+.rm_admin_words <- function(x) {
+  x <- stringr::str_replace(x, "\\s*\\(.*?specify.*\\)$", "")
+  x <- stringr::str_replace_all(x, "[\\r\\n]+", " ")
+  x <- stringr::str_replace_all(x, "[[:punct:]]+", " ")
+  admin <- "(?iu)\\b(?:մարզ(?:ում|ից|ի)?|քաղաք(?:ում|ից|ի)?|գյուղ(?:ում|ից|ի)?|ք\\.|գ\\.|marz|province|region|city|village)\\b"
+  x <- stringr::str_replace_all(x, admin, " ")
+  stringr::str_squish(x)
+}
+
+# Regex recognizers for the 11 marzes (+ Yerevan)
+.marz_rx <- list(
+  "Yerevan"      = "(?i)\\b(?:Երևան|Երեւան|Yerevan|Erevan)(?:ում|ից|ի)?\\b",
+  "Ararat"       = "(?i)\\b(?:Արարատ|Ararat)(?:ում|ից|ի)?\\b",
+  "Armavir"      = "(?i)\\b(?:Արմավիր|Armavir)(?:ում|ից|ի)?\\b",
+  "Aragatsotn"   = "(?i)\\b(?:Արագածոտն|Aragatsotn)(?:ում|ից|ի)?\\b",
+  "Kotayk"       = "(?i)\\b(?:Կոտայք|Kotayk)(?:ում|ից|ի)?\\b",
+  "Gegharkunik"  = "(?i)\\b(?:Գեղարքունիք|Gegharkunik|Gegharqunik)(?:ում|ից|ի)?\\b",
+  "Lori"         = "(?i)\\b(?:Լոռի|Lori)(?:ում|ից|ի)?\\b",
+  "Shirak"       = "(?i)\\b(?:Շիրակ|Shirak)(?:ում|ից|ի)?\\b",
+  "Tavush"       = "(?i)\\b(?:Տավուշ|Tavush)(?:ում|ից|ի)?\\b",
+  "Vayots Dzor"  = "(?i)\\b(?:Վայոց\\s*ձոր|Վայոց\\s*Ձոր|Vayots\\s*Dzor|Vayotz\\s*Dzor)(?:ում|ից|ի)?\\b",
+  "Syunik"       = "(?i)\\b(?:Սյունիք|Syunik)(?:ում|ից|ի)?\\b"
+)
+
+# City → marz roll-up (Arm + Eng variants; extend as needed)
+.city_to_marz <- c(
+  # Ararat
+  "Մասիս"="Ararat","Masis"="Ararat","Արտաշատ"="Ararat","Artashat"="Ararat",
+  "Վեդի"="Ararat","Vedi"="Ararat","Արարատ"="Ararat","Ararat"="Ararat",
+  # Armavir
+  "Վաղարշապատ"="Armavir","Vagharshapat"="Armavir","Էջմիածին"="Armavir","Etchmiadzin"="Armavir",
+  "Մեծամոր"="Armavir","Metsamor"="Armavir","Արմավիր"="Armavir","Armavir"="Armavir",
+  # Kotayk
+  "Աբովյան"="Kotayk","Abovyan"="Kotayk","Հրազդան"="Kotayk","Hrazdan"="Kotayk",
+  "Չարենցավան"="Kotayk","Charentsavan"="Kotayk","Ծաղկաձոր"="Kotayk","Tsaghkadzor"="Kotayk",
+  # Aragatsotn
+  "Աշտարակ"="Aragatsotn","Ashtarak"="Aragatsotn","Ապարան"="Aragatsotn","Aparan"="Aragatsotn",
+  "Թալին"="Aragatsotn","Talin"="Aragatsotn",
+  # Gegharkunik
+  "Գավառ"="Gegharkunik","Gavar"="Gegharkunik","Սևան"="Gegharkunik","Սեւան"="Gegharkunik","Sevan"="Gegharkunik",
+  "Մարտունի"="Gegharkunik","Martuni"="Gegharkunik","Վարդենիս"="Gegharkunik","Vardenis"="Gegharkunik",
+  # Lori
+  "Վանաձոր"="Lori","Vanadzor"="Lori","Ալավերդի"="Lori","Alaverdi"="Lori","Սպիտակ"="Lori","Spitak"="Lori",
+  # Shirak
+  "Գյումրի"="Shirak","Gyumri"="Shirak","Արթիկ"="Shirak","Artik"="Shirak",
+  # Tavush
+  "Իջևան"="Tavush","Իջեւան"="Tavush","Ijevan"="Tavush","Դիլիջան"="Tavush","Dilijan"="Tavush",
+  "Բերդ"="Tavush","Berd"="Tavush","Նոյեմբերյան"="Tavush","Noyemberyan"="Tavush",
+  # Vayots Dzor
+  "Եղեգնաձոր"="Vayots Dzor","Yeghegnadzor"="Vayots Dzor","Վայք"="Vayots Dzor","Vayk"="Vayots Dzor",
+  "Ջերմուկ"="Vayots Dzor","Jermuk"="Vayots Dzor",
+  # Syunik
+  "Կապան"="Syunik","Kapan"="Syunik","Գորիս"="Syunik","Goris"="Syunik",
+  "Սիսիան"="Syunik","Sisian"="Syunik","Մեղրի"="Syunik","Meghri"="Syunik",
+  # Yerevan
+  "Երևան"="Yerevan","Երեւան"="Yerevan","Yerevan"="Yerevan","Erevan"="Yerevan",
+  # New villages & spellings seen in the codebook
+  "Zorak"="Ararat","Sis"="Ararat","Sayat-Nova"="Ararat","Ranchpar"="Ararat","Noramarg"="Ararat",
+  "Nor Kharberd"="Ararat","Masis"="Ararat","Marmarashen"="Ararat","Kharberd"="Ararat","Khachpar"="Ararat",
+  "Hovtashat"="Ararat","Hayanist"="Ararat","Getapnya"="Ararat","Ejmiadzin"="Armavir","Azatashen"="Ararat",
+  "Ayntap"="Ararat","Ashtarak"="Aragatsotn","Artashat"="Ararat",
+  "Nor Kyuri"="Shirak","Nor Kyurik"="Shirak"
+)
+
+# Vectorized: return the canonical marz name or NA
+to_marz <- function(place) {
+  p <- .rm_admin_words(as.character(place))
+  hit_mat <- vapply(.marz_rx, function(rx) stringr::str_detect(p, rx),
+                    FUN.VALUE = rep(FALSE, length(p)))
+  if (is.null(dim(hit_mat))) {
+    hit_mat <- matrix(hit_mat, nrow = length(p), ncol = length(.marz_rx))
+    colnames(hit_mat) <- names(.marz_rx)
+  }
+  any_hit <- rowSums(hit_mat) > 0L
+  first_idx <- apply(hit_mat, 1, function(row) { w <- which(row); if (length(w)) w[1] else NA_integer_ })
+  marz_from_rx <- rep(NA_character_, length(p))
+  marz_from_rx[any_hit] <- names(.marz_rx)[first_idx[any_hit]]
+  base <- stringr::str_replace(p, "(?i)(ում|ից|ի)$", "")
+  city_rollup <- dplyr::recode(base, !!!.city_to_marz, .default = NA_character_)
+  dplyr::coalesce(marz_from_rx, city_rollup)
+}
+
+# Helper to normalize Artsakh regions from free-text labels
+normalize_region_artsakh <- function(x) {
+  x  <- as.character(x) |> stringr::str_trim()
+  x  <- stringr::str_replace(x, "\\s*\\(specify.*$", "")
+  x  <- ifelse(stringr::str_detect(x, "\\[.*prefer.*answer.*\\]"),
+               NA_character_, x)
+  xl <- stringr::str_to_lower(x)
+  out <- dplyr::case_when(
+    stringr::str_detect(xl, "^stepanakert") ~ "Stepanakert",
+    stringr::str_detect(xl, "^martuni")     ~ "Martuni",
+    stringr::str_detect(xl, "^martakert")   ~ "Martakert",
+    stringr::str_detect(xl, "^askeran")     ~ "Askeran",
+    stringr::str_detect(xl, "^hadrut")      ~ "Hadrut",
+    stringr::str_detect(xl, "^shushi")      ~ "Shushi",
+    TRUE ~ NA_character_
+  )
+  factor(out, levels = c("Stepanakert","Martuni","Martakert","Askeran","Hadrut","Shushi"))
+}
+
+# Rebuild original UTF-8 from text like "Ã‰Ã¼..."
+fix_double_utf8_mojibake <- function(v) {
+  v <- as.character(v)
+  bad <- !stringr::str_detect(v, "[\\u0530-\\u058F]") & stringr::str_detect(v, "[\\u00A0-\\u00FF]")
+  if (!any(bad, na.rm = TRUE)) return(v)
+  raw_list <- iconv(v[bad], from = "UTF-8", to = "latin1", toRaw = TRUE)
+  v[bad] <- vapply(raw_list, function(r) {
+    if (!length(r)) return(NA_character_)
+    s <- rawToChar(r); Encoding(s) <- "UTF-8"; s
+  }, "", USE.NAMES = FALSE)
+  v
+}
+
+# ---- Panel 5 aliases ------------------------------------------------------
+alias_map_mod5 <- list(
+  q42_go_pharmacy     = c("q42_go_pharmacy", "INSTEAD_GO_PHARMACY"),
+  q43_recommend_medic = c("q43_recommend_medic", "RECOMMENDED_BUY_MEDICINE"),
+  q43_other_specify   = c("q43_other_specify",  "RECOMMENDED_BUY_MEDICINE_OTHER")
+)
+
+# This helps mes resolve canonical var to the first matching existing column in df_tcwp
+resolve_mod5_col <- function(var) {
+  cand <- alias_map_mod5[[var]] %||% var
+  cand <- cand[cand %in% names(df_tcwp)]
+  if (length(cand)) cand[[1]] else NA_character_
+}
+
 ## 1. Load & Preprocess -------------------------------------------------------
 df_tcwp <- readRDS("need the actual data here.rds") %>%
   
