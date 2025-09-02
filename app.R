@@ -1236,114 +1236,96 @@ server <- function(input, output, session) {
 
   ## Panel 2: Pre‐Displacement & Employment ----------------------------------
   
-  # grab all occupation columns (everything q16_ *except* the before‐flag)
-  occ_cols <- grep("^q16_", names(df_tcwp), value = TRUE)
-  occ_cols <- setdiff(occ_cols, "q16_employed_before_displacement")
+  occ_cols_all <- grep("^q16_", names(df_tcwp), value = TRUE)
+  occ_cols <- setdiff(occ_cols_all, c("q16_employed_before_displacement"))
+  occ_cols_spec <- grep("(specify|occupation|job|work)", occ_cols, 
+                        value = TRUE, ignore.case = TRUE)
+  if (length(occ_cols_spec) > 0) occ_cols <- occ_cols_spec
   
-  # 2a) snapshot valueBoxes (2 decimals)
+  # Value boxes
   output$vb_emp_before <- renderValueBox({
     pct <- mean(df_tcwp$q16_employed_before_displacement == "Yes", na.rm = TRUE)
-    valueBox(
-      value    = sprintf("%.2f%%", pct * 100),
-      subtitle = "Employed Before Displacement",
-      icon     = icon("briefcase"),
-      color    = "blue"
-    )
+    valueBox(sprintf("%.2f%%", pct * 100), "Employed Before Displacement", 
+             icon = icon("briefcase"), color = "blue")
   })
   output$vb_emp_after <- renderValueBox({
     pct <- mean(df_tcwp$q17_employed_after_displacement == "Yes", na.rm = TRUE)
-    valueBox(
-      value    = sprintf("%.2f%%", pct * 100),
-      subtitle = "Employed After Displacement",
-      icon     = icon("globe"),
-      color    = "green"
-    )
+    valueBox(sprintf("%.2f%%", pct * 100), "Employed After Displacement",
+             icon = icon("globe"), color = "green")
   })
   output$vb_emp_current <- renderValueBox({
     pct <- mean(df_tcwp$q20_currently_employed == "Yes", na.rm = TRUE)
-    valueBox(
-      value    = sprintf("%.2f%%", pct * 100),
-      subtitle = "Currently Employed",
-      icon     = icon("user-tie"),
-      color    = "purple"
-    )
+    valueBox(sprintf("%.2f%%", pct * 100), "Currently Employed",
+             icon = icon("user-tie"), color = "purple")
   })
   
-  # 2b) Employment % by Stage (two‐decimal % on the y‐axis)
+  # Employment % by Stage
   output$emp_status_plot <- renderPlotly({
     df_pct <- tibble(
       Stage   = c("Before", "After", "Current"),
       Percent = c(
         mean(df_tcwp$q16_employed_before_displacement == "Yes", na.rm = TRUE),
         mean(df_tcwp$q17_employed_after_displacement  == "Yes", na.rm = TRUE),
-        mean(df_tcwp$q20_currently_employed          == "Yes", na.rm = TRUE)
+        mean(df_tcwp$q20_currently_employed           == "Yes", na.rm = TRUE)
       )
     )
     plot_ly(df_pct, x = ~Stage, y = ~Percent, type = "bar") %>%
-      layout(
-        yaxis = list(title = "Proportion", tickformat = ".2%"),
-        xaxis = list(title = "")
-      )
+      layout(yaxis = list(title = "Proportion", tickformat = ".2%"), 
+             xaxis = list(title = ""))
   })
   
-  # 2b) Occupations (Pre‐Displacement) — pivots **any** q16_ field
+  # Occupations (Pre-Displacement)
   output$emp_occ_tbl <- renderDT({
-    df_tcwp %>%
-      filter(q16_employed_before_displacement == "Yes") %>%
-      select(all_of(occ_cols)) %>%
-      pivot_longer(everything(), names_to = "code", values_to = "occupation") %>%
-      filter(!is.na(occupation)) %>%
-      count(occupation, name = "Count") %>%
-      arrange(desc(Count)) %>%
-      datatable(options = list(pageLength = 5, autoWidth = TRUE))
+    employed_yes <- c("Yes","YES","yes","Y","1",1,TRUE)
+    dat <- df_tcwp %>%
+      filter(q16_employed_before_displacement %in% employed_yes) %>%
+      select(any_of(occ_cols)) %>%
+      mutate(across(everything(), as.character)) %>%
+      pivot_longer(
+        everything(), names_to = "code", values_to = "occupation",
+        values_drop_na = TRUE,
+        values_transform = list(occupation = as.character)
+      ) %>%
+      mutate(occupation = trimws(occupation)) %>%
+      filter(occupation != "", 
+             !occupation %in% c("NA","N/A","na","n/a","-","--")) %>%
+      count(occupation, name = "Count", sort = TRUE)
+    datatable(dat, options = list(pageLength = 10, autoWidth = TRUE), 
+              rownames = FALSE)
   })
   
-  # 2c) Reasons for Distrust (check‐all → stacked counts)
+  # Reasons for Distrust
   output$mistrust_reasons <- renderPlotly({
     df_tcwp %>%
       select(starts_with("q13_reasons_")) %>%
       pivot_longer(everything(), names_to = "reason", values_to = "sel") %>%
       filter(sel == "Yes") %>%
       count(reason) %>%
-      mutate(label = mod2_friendly[reason]) %>%
+      mutate(label = ifelse(is.na(mod2_friendly[reason]), 
+                            reason, unname(mod2_friendly[reason]))) %>%
       plot_ly(x = ~label, y = ~n, type = "bar") %>%
-      layout(
-        xaxis = list(title = "", tickangle = -45),
-        yaxis = list(title = "Count")
-      )
+      layout(xaxis = list(title = "", tickangle = -45), 
+             yaxis = list(title = "Count"))
   })
   
-  # 2d) “Explore any metric”
+  # Explore any metric
   output$tbl2 <- renderDT({
-    req(input$var2)
-    var <- input$var2
+    req(input$var2); var <- input$var2
     cnt <- df_tcwp %>%
       filter(!is.na(.data[[var]])) %>%
       count(Value = .data[[var]], name = "Count") %>%
       arrange(desc(Count))
-    
     datatable(cnt, options = list(pageLength = 10, autoWidth = TRUE))
   })
-  
   output$plt2 <- renderPlot({
-    req(input$var2)
-    var   <- input$var2
-    label <- mod2_friendly[[var]]
-    
+    req(input$var2); var <- input$var2; label <- mod2_friendly[[var]]
     cnt <- df_tcwp %>%
       filter(!is.na(.data[[var]])) %>%
       count(Value = .data[[var]], name = "n")
-    
     ggplot(cnt, aes(x = Value, y = n)) +
       geom_col(fill = "#2C3E50") +
-      labs(
-        x     = label,
-        y     = "Count",
-        title = if (startsWith(var, "q13_"))
-          paste0(label, " (check‐all that apply)")
-        else
-          label
-      ) +
+      labs(x = label, y = "Count",
+           title = if (startsWith(var, "q13_")) paste0(label, " (check‐all that apply)") else label) +
       theme_minimal(base_size = 14) +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
   })
@@ -1355,16 +1337,16 @@ server <- function(input, output, session) {
       filter(sel == "Yes") %>%
       count(barrier) %>%
       mutate(label = recode(barrier,
-                            q21_documentation             = "Lack of Documentation",
-                            q21_employemnt_opportunities  = "No Decent Jobs",
-                            q21_opportunities_suited_to_me= "Not Suited To My Skills",
-                            q21_opportunities_someone     = "Jobs for My Age",
-                            q21_access                    = "No Childcare Access",
-                            q21_education                 = "Education Not Recognized",
-                            q21_information               = "Lack of Info, How to Apply",
-                            q21_not_planning_stay         = "Not Planning To Stay",
-                            q21_discrimination            = "Discrimination",
-                            q21_other                     = "Other"
+                            q21_documentation="Lack of Documentation",
+                            q21_employemnt_opportunities="No Decent Jobs",
+                            q21_opportunities_suited_to_me="Not Suited To My Skills",
+                            q21_opportunities_someone="Jobs for My Age",
+                            q21_access="No Childcare Access",
+                            q21_education="Education Not Recognized",
+                            q21_information="Lack of Info, How to Apply",
+                            q21_not_planning_stay="Not Planning To Stay",
+                            q21_discrimination="Discrimination",
+                            q21_other="Other"
       )) %>%
       arrange(desc(n)) %>%
       plot_ly(x=~n, y=~reorder(label, n), type="bar", orientation="h") %>%
