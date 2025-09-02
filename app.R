@@ -49,7 +49,12 @@ library(readr)           # for fast and friendly reading of flat files (CSV, TSV
 library(sf)              # for reading, writing, and manipulating spatial (simple feature) data
 library(shiny)           # for building interactive web applications
 library(shinydashboard)  # for creating dashboard layouts with Shiny
+library(stringr)         # strings
+library(stringi)         # encoding
 library(tidyr)           # for data tidying (pivoting, unnesting, handling missing values)
+library(tibble)          # tibble()
+
+arm_font <- "Noto Sans Armenian"  # used where Armenian text may appear
 
 ## 1. Load & Preprocess -------------------------------------------------------
 df_tcwp <- readRDS("need the actual data here.rds") %>%
